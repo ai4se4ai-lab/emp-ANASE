@@ -1,0 +1,2 @@
+pearson_r,r_squared,p_value,significant,slope,intercept,std_error,n,complacency_zone_n,breakdowns_in_zone,note
+0.918,0.843,0.0,True,0.7189,2.8292,0.0896,14,8,4,Complacency zone: relational_density > 0.75
