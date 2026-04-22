@@ -23,8 +23,12 @@ import sys
 from datetime import datetime
 from typing import List, Dict, Any
 
+from dotenv import load_dotenv
 import pandas as pd
 import yaml
+
+# Load .env from this directory so GITHUB_TOKEN and other secrets work when running main.py
+load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env"))
 
 from base_collector import BaseCollector
 from deduplicator import Deduplicator

@@ -3,6 +3,10 @@ GitHub Collector
 Uses GitHub REST API (api.github.com) - Official, TOS-compliant.
 REQUIRES GitHub Personal Access Token with 'repo' and 'read:discussion' scopes.
 Create token at: https://github.com/settings/tokens
+
+GitHub Search allows at most five AND/OR/NOT operators per query; keyword searches are batched.
+
+REST /search/issues requires `is:issue` or `is:pull-request` (not `is:discussion`); we collect issues only unless GraphQL is added later.
 """
 
 import os
@@ -14,7 +18,7 @@ from base_collector import BaseCollector
 
 
 class GithubCollector(BaseCollector):
-    """Collector for GitHub Discussions and Issues."""
+    """Collector for GitHub issues (batched keyword search via REST)."""
 
     def __init__(self, config_path: str = "config.yaml"):
         super().__init__(config_path)
@@ -49,25 +53,26 @@ class GithubCollector(BaseCollector):
                 time.sleep(wait_time)
                 return self._make_request(endpoint, params)
 
+            # Search API: some repos cannot be queried (private, opted out, etc.)
+            if response.status_code == 422:
+                try:
+                    body = response.json()
+                    detail = body.get("message", "")
+                    errs = body.get("errors") or []
+                    if errs and isinstance(errs[0], dict):
+                        detail = errs[0].get("message", detail)
+                except Exception:
+                    detail = response.text[:200]
+                self.logger.warning(f"GitHub API skipped request (422): {detail}")
+                time.sleep(self.rate_limit)
+                return {}
+
             response.raise_for_status()
             time.sleep(self.rate_limit)
             return response.json()
         except requests.exceptions.RequestException as e:
             self.logger.error(f"GitHub API request failed: {e}")
             return {}
-
-    def search_discussions(self, query: str) -> List[Dict]:
-        """Search GitHub Discussions using GraphQL (fallback to REST search)."""
-        # GitHub REST search API for discussions is limited; we use issue search with discussions
-        params = {
-            'q': f'{query} is:discussion',
-            'per_page': self.per_page,
-            'sort': 'updated',
-            'order': 'desc'
-        }
-
-        data = self._make_request('search/issues', params)
-        return data.get('items', [])
 
     def get_discussion_comments(self, repo: str, discussion_number: int) -> List[Dict]:
         """Fetch comments for a specific discussion."""
@@ -143,57 +148,50 @@ class GithubCollector(BaseCollector):
             return match.group(1).strip()
         return ''
 
+    @staticmethod
+    def _keyword_query_batches() -> List[str]:
+        """Return search `q` fragments with at most five OR operators (GitHub Search limit)."""
+        return [
+            'analogy OR metaphor OR "like a" OR "similar to" OR "junior dev"',
+            '"autopilot" OR "black box"',
+        ]
+
+    def _search_repo_issues(self, repo: str) -> List[Dict[str, Any]]:
+        """Merge batched keyword searches for one repo (REST search issues only)."""
+        merged: Dict[Any, Dict[str, Any]] = {}
+        for batch in self._keyword_query_batches():
+            query = f"{batch} repo:{repo} is:issue"
+            data = self._make_request(
+                "search/issues", {"q": query, "per_page": self.per_page}
+            )
+            for item in data.get("items", []):
+                iid = item.get("id")
+                if iid is not None:
+                    merged[iid] = item
+            time.sleep(self.rate_limit)
+        return list(merged.values())[: self.max_results]
+
     def collect(self) -> List[Dict[str, Any]]:
-        """Collect GitHub Discussions and Issues."""
+        """Collect GitHub issues matching analogy keywords (see module doc for REST limits)."""
         self.logger.info("Starting GitHub collection...")
         records = []
 
-        # Search across configured repositories
-        search_terms = ' OR '.join([
-            'analogy', 'metaphor', '"like a"', '"similar to"', 
-            '"junior dev"', '"autopilot"', '"black box"'
-        ])
-
-        for repo in self.search_repos:
-            self.logger.info(f"Searching repository: {repo}")
-            query = f"{search_terms} repo:{repo}"
-
-            try:
-                items = self.search_discussions(query)
-
-                for item in items[:self.max_results]:
-                    record = self._process_item(item, 'discussion')
-                    if record:
-                        records.append(record)
-
-                time.sleep(self.rate_limit)
-
-            except Exception as e:
-                self.logger.error(f"Error searching {repo}: {e}")
-                continue
-
-        # Also search issues in popular agentic repos
         agent_repos = [
             "microsoft/vscode-jupyter",
             "github/copilot-cli-for-beginners",
             "getcursor/cursor",
-            "anthropics/anthropic-cookbook"
+            "anthropics/anthropic-cookbook",
         ]
+        # Dedupe while preserving order (configured repos first)
+        all_repos = list(dict.fromkeys([*self.search_repos, *agent_repos]))
 
-        for repo in agent_repos:
+        for repo in all_repos:
             self.logger.info(f"Searching issues in {repo}...")
-            query = f"{search_terms} repo:{repo} is:issue"
-            params = {'q': query, 'per_page': self.per_page}
-
             try:
-                data = self._make_request('search/issues', params)
-                items = data.get('items', [])
-
-                for item in items:
-                    record = self._process_item(item, 'issue')
+                for item in self._search_repo_issues(repo):
+                    record = self._process_item(item, "issue")
                     if record:
                         records.append(record)
-
             except Exception as e:
                 self.logger.error(f"Error searching issues in {repo}: {e}")
                 continue

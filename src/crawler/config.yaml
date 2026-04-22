@@ -124,7 +124,7 @@ platforms:
     max_results: 1000
     # Search within GitHub Discussions and Issues
     search_repos:
-      - "orgs/community/discussions"
+      - "community/community"
       - "microsoft/vscode-jupyter"
       - "github/copilot-cli-for-beginners"
     # GitHub Personal Access Token (REQUIRED for search API)
