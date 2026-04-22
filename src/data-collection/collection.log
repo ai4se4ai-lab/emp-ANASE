@@ -1,0 +1,18 @@
+2026-04-22 14:53:07,113  INFO      ════════════════════════════════════════════════════════════
+2026-04-22 14:53:07,113  INFO      DEMO MODE — using synthetic data (no API calls)
+2026-04-22 14:53:07,113  INFO      ════════════════════════════════════════════════════════════
+2026-04-22 14:53:07,121  INFO      Saved 5 rows → output\stackoverflow_posts.csv
+2026-04-22 14:53:07,123  INFO      Saved 5 rows → output\reddit_posts.csv
+2026-04-22 14:53:07,125  INFO      Saved 3 rows → output\github_posts.csv
+2026-04-22 14:53:07,127  INFO      Saved 2 rows → output\zenodo_posts.csv
+2026-04-22 14:53:07,134  INFO      Saved 15 rows → output\combined_dataset.csv
+2026-04-22 14:53:07,137  INFO      Saved 14 rows → output\combined_filtered.csv
+2026-04-22 14:53:07,139  INFO      
+     platform  raw_collected passes_dual_filter
+stackoverflow              5                n/a
+       reddit              5                n/a
+       github              3                n/a
+       zenodo              2                n/a
+     COMBINED             15                 14
+2026-04-22 14:53:07,141  INFO      Saved 5 rows → output\collection_summary.csv
+2026-04-22 14:53:07,141  INFO      Demo complete — check the output/ directory.

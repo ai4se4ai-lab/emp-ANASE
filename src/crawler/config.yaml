@@ -1,0 +1,190 @@
+# =============================================================================
+# Configuration for Analogical Reasoning Data Collector
+# =============================================================================
+# WARNING: This tool must be used in compliance with each platform's Terms of
+# Service and API policies. Obtain all necessary API keys before use.
+# =============================================================================
+
+project:
+  name: "analogical_reasoning_agentic_se"
+  version: "1.0.0"
+  output_dir: "./output"
+  log_dir: "./logs"
+
+# Date range for data collection (ISO 8601)
+date_range:
+  start: "2025-09-01"
+  end: "2026-02-28"
+
+# Keyword configuration for analogy detection
+keywords:
+  analogy_indicators:
+    - "like a"
+    - "similar to"
+    - "analogy"
+    - "metaphor"
+    - "as if"
+    - "just like"
+    - "works like"
+    - "behaves like"
+    - "think of it as"
+    - "imagine"
+
+  agent_terms:
+    - "AI agent"
+    - "Copilot"
+    - "Cursor"
+    - "Claude Code"
+    - "coding agent"
+    - "SWE agent"
+    - "GitHub Copilot"
+    - "AI coding"
+
+  exclusion_terms:
+    - "AI art"
+    - "image generation"
+    - "DALL-E"
+    - "Midjourney"
+    - "Stable Diffusion"
+    - "game"
+    - "non-developer"
+
+# Analogy type classification heuristics
+analogy_patterns:
+  structural:
+    - "architecture"
+    - "structure"
+    - "stack"
+    - "layer"
+    - "foundation"
+    - "building"
+    - "blueprint"
+  functional:
+    - "tool"
+    - "drill"
+    - "instrument"
+    - "engine"
+    - "machine"
+    - "attachment"
+    - "plugin"
+    - "extension"
+  process:
+    - "junior dev"
+    - "intern"
+    - "team member"
+    - "collaboration"
+    - "pair programming"
+    - "code review"
+    - "engineer"
+  cross_domain:
+    - "lottery"
+    - "weather"
+    - "cooking"
+    - "driving"
+    - "autopilot"
+    - "game"
+    - "music"
+
+# Platform-specific configurations
+platforms:
+  stackoverflow:
+    enabled: true
+    api_base: "https://api.stackexchange.com/2.3"
+    page_size: 100
+    max_pages: 50
+    tags:
+      - "github-copilot"
+      - "cursor-ide"
+      - "ai-code-generation"
+      - "github-copilot-chat"
+    # Stack Exchange API key (optional but recommended for higher quota)
+    api_key: null  # Set via STACKOVERFLOW_API_KEY env var
+
+  reddit:
+    enabled: true
+    subreddits:
+      - "ChatGPTCoding"
+      - "cursor"
+      - "ClaudeAI"
+      - "programming"
+      - "softwareengineering"
+      - "LocalLLaMA"
+    sort: "relevance"
+    time_filter: "year"
+    limit: 1000
+    # Reddit API credentials (REQUIRED - via Reddit App)
+    client_id: null      # Set via REDDIT_CLIENT_ID env var
+    client_secret: null  # Set via REDDIT_CLIENT_SECRET env var
+    user_agent: "AnalogicalReasoningResearch/1.0 (Academic Study)"
+
+  github:
+    enabled: true
+    api_base: "https://api.github.com"
+    per_page: 100
+    max_results: 1000
+    # Search within GitHub Discussions and Issues
+    search_repos:
+      - "orgs/community/discussions"
+      - "microsoft/vscode-jupyter"
+      - "github/copilot-cli-for-beginners"
+    # GitHub Personal Access Token (REQUIRED for search API)
+    token: null  # Set via GITHUB_TOKEN env var
+
+  zenodo:
+    enabled: true
+    api_base: "https://zenodo.org/api"
+    max_records: 500
+    communities:
+      - "softwareengineering"
+      - "ai"
+    # Search query for Zenodo records
+    query: "analogical reasoning software engineering"
+
+  discord:
+    enabled: false  # Disabled by default - requires server owner permission
+    # Discord data collection is ethically complex. See README for details.
+    # If enabled, requires DISCORD_BOT_TOKEN env var
+    servers: []
+    channels: []
+
+# Deduplication settings
+deduplication:
+  enabled: true
+  similarity_threshold: 0.85  # Cosine similarity threshold
+  min_content_length: 50      # Characters
+
+# Rate limiting (seconds between requests)
+rate_limits:
+  stackoverflow: 0.05   # ~20 req/sec (SE API allows 30 with key)
+  reddit: 1.0           # PRAW handles this automatically
+  github: 0.5           # 2 req/sec for authenticated requests
+  zenodo: 0.5
+  discord: 1.0
+
+# Output schema fields
+output_schema:
+  - record_id
+  - platform
+  - source_type
+  - url
+  - archive_url
+  - title
+  - author_handle
+  - author_id_hash  # Anonymized
+  - post_date
+  - collection_date
+  - content
+  - content_length
+  - analogy_present
+  - analogy_types
+  - analogy_quote
+  - analogy_confidence
+  - target_domain
+  - source_domain
+  - sldc_phase
+  - engagement_score
+  - upvotes
+  - replies
+  - views
+  - verified_by
+  - collector_version

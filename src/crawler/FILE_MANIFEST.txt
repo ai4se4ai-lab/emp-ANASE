@@ -1,0 +1,112 @@
+================================================================================
+ANALOGICAL REASONING DATA COLLECTOR - FILE MANIFEST
+================================================================================
+
+CORE FILES
+----------
+main.py                          - Orchestrator script; coordinates all platforms
+base_collector.py                - Abstract base class with shared utilities
+config.yaml                      - Central configuration (API endpoints, keywords, schema)
+requirements.txt                 - Python dependencies
+setup.py                         - Package installation script
+Makefile                         - Common commands (install, collect, validate, etc.)
+__init__.py                      - Package initializer
+
+PLATFORM COLLECTORS
+-------------------
+stackoverflow_collector.py       - Stack Exchange API collector
+reddit_collector.py              - Reddit API collector (via PRAW)
+github_collector.py              - GitHub REST API collector
+zenodo_collector.py              - Zenodo REST API collector
+discord_collector.py             - Discord bot collector (ETHICAL USE ONLY)
+
+DATA MANAGEMENT
+---------------
+deduplicator.py                  - Cross-platform deduplication (hash + TF-IDF similarity)
+data_validator.py                - URL resolution and content verification
+survey_collector.py              - IRB-compliant survey data management
+analysis_template.py             - Statistical analysis and visualization template
+
+CONFIGURATION & CREDENTIALS
+---------------------------
+.env.example                     - Template for API keys (NEVER commit actual .env)
+README.md                        - Comprehensive documentation
+
+OUTPUT (Generated at Runtime)
+-----------------------------
+output/stackoverflow_analogies.csv
+output/reddit_analogies.csv
+output/github_analogies.csv
+output/zenodo_analogies.csv
+output/discord_analogies.csv       (if enabled)
+output/combined_analogies_YYYYMMDD_HHMMSS.csv
+output/collection_report.txt
+output/validation_report.txt
+output/survey_data.csv
+output/summary_stats.json
+output/figures/*.png
+
+LOGS (Generated at Runtime)
+---------------------------
+logs/orchestrator_YYYYMMDD_HHMMSS.log
+logs/stackoverflow.log
+logs/reddit.log
+logs/github.log
+logs/zenodo.log
+logs/discord.log
+
+================================================================================
+USAGE WORKFLOW
+================================================================================
+
+1. INSTALL
+   $ make install
+
+2. CONFIGURE
+   $ cp .env.example .env
+   # Edit .env with your API credentials
+   # Edit config.yaml with your search parameters
+
+3. COLLECT
+   $ make collect              # All platforms
+   $ make collect-so           # Stack Overflow only
+   $ make collect-reddit       # Reddit only
+
+4. VALIDATE
+   $ make validate             # Verify URLs and content
+
+5. ANALYZE
+   $ python analysis_template.py
+
+================================================================================
+ETHICAL CHECKLIST
+================================================================================
+
+Before running collection:
+[ ] API keys obtained legitimately from all platforms
+[ ] Rate limits configured appropriately
+[ ] Discord collection disabled OR server owner permission obtained
+[ ] IRB approval obtained for survey component
+[ ] Informed consent mechanism ready
+[ ] Data anonymization pipeline configured
+[ ] Replication package plan established (Zenodo/Figshare)
+
+================================================================================
+VERIFICATION STATUS
+================================================================================
+
+This framework was designed to address the verification failures identified
+in the original paper:
+
+ORIGINAL PROBLEM                    FRAMEWORK SOLUTION
+----------------                    ------------------
+Unverifiable GitHub discussions     Real-time URL validation via data_validator.py
+Fabricated academic citations       No citations generated; only raw data collected
+Impossible "753 unique developers"  Cross-platform deduplication explicitly documented
+                      as impossible without identity linking
+Missing replication package         Automated export to standardized CSV + JSON
+No statistical tests                analysis_template.py with Kruskal-Wallis, 
+                                  Mann-Whitney U, Spearman correlation
+No confidence intervals             Inferential statistics included in analysis
+
+================================================================================
