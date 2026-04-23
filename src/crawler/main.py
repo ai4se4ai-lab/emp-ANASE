@@ -71,7 +71,8 @@ def collect_platform(platform_name: str, config_path: str) -> List[Dict[str, Any
         'reddit': 'reddit_collector.RedditCollector',
         'github': 'github_collector.GithubCollector',
         'zenodo': 'zenodo_collector.ZenodoCollector',
-        'discord': 'discord_collector.DiscordCollector'
+        'discord': 'discord_collector.DiscordCollector',
+        'huggingface': 'huggingface_collector.HuggingfaceCollector',
     }
 
     if platform_name not in collectors:
@@ -206,7 +207,7 @@ def main():
     parser.add_argument(
         '--platforms',
         default='all',
-        help='Comma-separated list of platforms (stackoverflow,reddit,github,zenodo,discord) or "all"'
+        help='Comma-separated list of platforms (stackoverflow,reddit,github,zenodo,huggingface,discord) or "all"'
     )
     parser.add_argument(
         '--skip-dedup',
@@ -231,7 +232,7 @@ def main():
 
     # Determine platforms
     if args.platforms.lower() == 'all':
-        platforms = ['stackoverflow', 'reddit', 'github', 'zenodo']
+        platforms = ['stackoverflow', 'reddit', 'github', 'zenodo', 'huggingface']
         # Discord disabled by default due to ethical complexity
     else:
         platforms = [p.strip().lower() for p in args.platforms.split(',')]
@@ -252,8 +253,21 @@ def main():
     df = merge_records(all_records)
 
     if df.empty:
-        logger.error("No data collected. Check API credentials and network connectivity.")
-        return 1
+        logger.warning(
+            "No records matched collection filters. Writing empty output and report."
+        )
+        output_dir = config['project']['output_dir']
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        output_file = args.output or f"combined_analogies_{timestamp}.csv"
+        output_path = os.path.join(output_dir, output_file)
+
+        empty_columns = config.get('output_schema', [])
+        pd.DataFrame(columns=empty_columns).to_csv(output_path, index=False, quoting=1)
+        logger.info(f"Empty combined dataset saved to {output_path}")
+
+        generate_report(df, None, output_dir)
+        logger.info("Pipeline complete (no matching records found).")
+        return 0
 
     # Deduplication
     dedup_result = None

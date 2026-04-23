@@ -97,6 +97,19 @@ platforms:
       - "cursor-ide"
       - "ai-code-generation"
       - "github-copilot-chat"
+      - "chatgpt-api"
+      - "openai-api"
+      - "anthropic-api"
+      - "google-api"
+      - "llm"
+      - "gpt-4"
+      - "gpt-5"
+      - "prompt-engineering"
+      - "code-completion"
+      - "generative-ai"
+      - "vscode-extensions"
+      - "visual-studio-code"
+      - "artificial-intelligence"
     # Stack Exchange API key (optional but recommended for higher quota)
     api_key: null  # Set via STACKOVERFLOW_API_KEY env var
 
@@ -122,11 +135,14 @@ platforms:
     api_base: "https://api.github.com"
     per_page: 100
     max_results: 1000
-    # Search within GitHub Discussions and Issues
-    search_repos:
-      - "community/community"
-      - "microsoft/vscode-jupyter"
-      - "github/copilot-cli-for-beginners"
+    # Discover repositories via GET /search/repositories (sorted by stars, desc)
+    top_starred_repos:
+      enabled: true
+      count: 100
+      # Repository search `q` (see https://docs.github.com/en/search-github/searching-on-github/searching-for-repositories)
+      repository_search_query: "stars:>=1"
+    # Optional extra owner/repo names to search in addition to top_starred_repos (deduped)
+    search_repos: []
     # GitHub Personal Access Token (REQUIRED for search API)
     token: null  # Set via GITHUB_TOKEN env var
 
@@ -139,6 +155,26 @@ platforms:
       - "ai"
     # Search query for Zenodo records
     query: "analogical reasoning software engineering"
+
+  huggingface:
+    enabled: true
+    api_base: "https://huggingface.co/api"
+    # Candidate repositories are discovered from these hub namespaces
+    repo_types:
+      - "models"
+      - "datasets"
+      - "spaces"
+    # Cap repository discovery so collection runtime remains bounded
+    max_repositories: 30
+    per_term_repo_limit: 10
+    per_page: 20
+    max_results: 100
+    # Hub repository search query used to discover candidates
+    repository_search_query: "copilot cursor claude chatgpt coding assistant software engineering"
+    # Optional additional owner/repo names to scan (deduped with discovered repos)
+    search_repos: []
+    # Optional Hugging Face token (recommended for better limits)
+    token: null  # Set via HUGGINGFACE_TOKEN env var
 
   discord:
     enabled: false  # Disabled by default - requires server owner permission
@@ -159,6 +195,7 @@ rate_limits:
   reddit: 1.0           # PRAW handles this automatically
   github: 0.5           # 2 req/sec for authenticated requests
   zenodo: 0.5
+  huggingface: 0.5
   discord: 1.0
 
 # Output schema fields

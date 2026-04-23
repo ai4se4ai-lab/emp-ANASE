@@ -6,7 +6,9 @@ Requires API key for higher quota (optional but recommended).
 
 import time
 import urllib.parse
-from typing import Dict, List, Any
+import os
+from datetime import datetime
+from typing import Dict, List, Any, Optional
 import requests
 from base_collector import BaseCollector
 
@@ -61,12 +63,16 @@ class StackoverflowCollector(BaseCollector):
         source_domain = self._extract_source_domain(analogy_quote) if analogy_quote else ''
 
         post_id = post.get('question_id') or post.get('answer_id')
+        question_id = post.get('question_id') or post.get('parent_id')
 
         return self.create_record(
             record_id=f"SO-{post_id}",
             source_type=post_type,
-            url=f"https://stackoverflow.com/questions/{post.get('question_id', '')}",
-            archive_url=f"https://webcache.googleusercontent.com/search?q=cache:https://stackoverflow.com/questions/{post.get('question_id', '')}",
+            url=f"https://stackoverflow.com/questions/{question_id}" if question_id else '',
+            archive_url=(
+                f"https://webcache.googleusercontent.com/search?q=cache:https://stackoverflow.com/questions/{question_id}"
+                if question_id else ''
+            ),
             title=post.get('title', ''),
             author_handle=post.get('owner', {}).get('display_name', 'anonymous'),
             post_date=datetime.fromtimestamp(post.get('creation_date', 0)).isoformat() if post.get('creation_date') else '',
@@ -84,6 +90,20 @@ class StackoverflowCollector(BaseCollector):
             views=post.get('view_count', 0),
             verified_by='api'
         )
+
+    def _fetch_question_answers(self, question_ids: List[int]) -> List[Dict[str, Any]]:
+        """Fetch answers for a batch of question IDs."""
+        if not question_ids:
+            return []
+
+        endpoint = f"questions/{';'.join(str(qid) for qid in question_ids)}/answers"
+        params = {
+            'sort': 'votes',
+            'order': 'desc',
+            'filter': 'withbody'
+        }
+        data = self._make_request(endpoint, params)
+        return data.get('items', [])
 
     def _extract_target_domain(self, text: str) -> str:
         """Extract which AI agent/tool is being discussed."""
@@ -118,35 +138,59 @@ class StackoverflowCollector(BaseCollector):
         """Collect questions and answers from Stack Overflow."""
         self.logger.info("Starting Stack Overflow collection...")
         records = []
+        seen_post_ids = set()
 
-        # Build search query
-        tag_query = ';'.join(self.tags)
+        # Query each tag independently. `tagged=a;b` is logical AND in Stack Exchange API,
+        # which is too restrictive for this use case and can severely limit recall.
+        for tag in self.tags:
+            self.logger.info(f"Collecting Stack Overflow posts for tag '{tag}'")
 
-        # Collect questions
-        for page in range(1, self.max_pages + 1):
-            self.logger.info(f"Fetching questions page {page}/{self.max_pages}")
+            for page in range(1, self.max_pages + 1):
+                self.logger.info(f"Fetching questions for tag '{tag}' page {page}/{self.max_pages}")
 
-            params = {
-                'tagged': tag_query,
-                'sort': 'creation',
-                'order': 'desc',
-                'page': page,
-                'filter': 'withbody'  # Include post body
-            }
+                params = {
+                    'tagged': tag,
+                    'sort': 'creation',
+                    'order': 'desc',
+                    'page': page,
+                    'filter': 'withbody'
+                }
 
-            data = self._make_request('questions', params)
-            items = data.get('items', [])
+                data = self._make_request('questions', params)
+                questions = data.get('items', [])
+                if not questions:
+                    break
 
-            if not items:
-                break
+                question_ids = []
+                for question in questions:
+                    question_id = question.get('question_id')
+                    if question_id:
+                        question_ids.append(question_id)
 
-            for post in items:
-                record = self._process_post(post, 'question')
-                if record:
-                    records.append(record)
+                    record = self._process_post(question, 'question')
+                    if record and record['record_id'] not in seen_post_ids:
+                        seen_post_ids.add(record['record_id'])
+                        records.append(record)
 
-            if not data.get('has_more', False):
-                break
+                # Fetch top-voted answers for these questions for additional relevant signal.
+                answers = self._fetch_question_answers(question_ids)
+                question_titles = {
+                    q.get('question_id'): q.get('title', '')
+                    for q in questions if q.get('question_id')
+                }
+                for answer in answers:
+                    parent_id = answer.get('question_id')
+                    if parent_id:
+                        answer['parent_id'] = parent_id
+                        answer['title'] = question_titles.get(parent_id, '')
+
+                    record = self._process_post(answer, 'answer')
+                    if record and record['record_id'] not in seen_post_ids:
+                        seen_post_ids.add(record['record_id'])
+                        records.append(record)
+
+                if not data.get('has_more', False):
+                    break
 
         self.logger.info(f"Stack Overflow collection complete. {len(records)} analogy records found.")
         self.save_records(records, "stackoverflow_analogies.csv")
@@ -154,6 +198,5 @@ class StackoverflowCollector(BaseCollector):
 
 
 if __name__ == "__main__":
-    import os
     collector = StackoverflowCollector()
     collector.collect()

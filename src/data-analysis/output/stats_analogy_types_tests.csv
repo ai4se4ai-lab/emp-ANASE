@@ -1,8 +1,0 @@
-test,comparison,H_or_U,p_value,effect_size,effect_type,significant,note
-Kruskal-Wallis,All types,7.219,0.0652,0.117,eta_squared,False,"df=3, N=40"
-Mann-Whitney U,Structural vs Functional,26.0,0.0425,0.406,r,False,Bonferroni α=0.0083
-Mann-Whitney U,Structural vs Process,31.0,0.1191,0.321,r,False,Bonferroni α=0.0083
-Mann-Whitney U,Structural vs Cross-Domain,52.0,0.8953,0.034,r,False,Bonferroni α=0.0083
-Mann-Whitney U,Functional vs Process,53.5,0.8005,0.059,r,False,Bonferroni α=0.0083
-Mann-Whitney U,Functional vs Cross-Domain,74.5,0.0392,0.414,r,False,Bonferroni α=0.0083
-Mann-Whitney U,Process vs Cross-Domain,70.0,0.1028,0.338,r,False,Bonferroni α=0.0083

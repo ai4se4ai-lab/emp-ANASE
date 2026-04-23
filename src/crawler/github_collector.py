@@ -11,7 +11,6 @@ REST /search/issues requires `is:issue` or `is:pull-request` (not `is:discussion
 
 import os
 import time
-import base64
 from typing import Dict, List, Any, Optional
 import requests
 from base_collector import BaseCollector
@@ -27,6 +26,8 @@ class GithubCollector(BaseCollector):
         self.per_page = self.platform_config.get('per_page', 100)
         self.max_results = self.platform_config.get('max_results', 1000)
         self.search_repos = self.platform_config.get('search_repos', [])
+        # None = legacy config without top_starred_repos block (manual search_repos only)
+        self._top_starred_block = self.platform_config.get('top_starred_repos')
         self.rate_limit = self.config['rate_limits'].get('github', 0.5)
 
         if not self.token:
@@ -97,8 +98,6 @@ class GithubCollector(BaseCollector):
         analogy_types = self.classify_analogy_type(content)
         analogy_quote = self.extract_analogy_quote(content)
         sdlc_phase = self.determine_sdlc_phase(content)
-
-        repo_name = item.get('repository_url', '').replace('https://api.github.com/repos/', '')
 
         return self.create_record(
             record_id=f"GH-{item.get('id', 'unknown')}",
@@ -171,19 +170,72 @@ class GithubCollector(BaseCollector):
             time.sleep(self.rate_limit)
         return list(merged.values())[: self.max_results]
 
+    def _fetch_top_starred_repo_full_names(self, limit: int) -> List[str]:
+        """Top repositories by stars via GET /search/repositories (paginate if limit > 100)."""
+        cfg = self._top_starred_block if isinstance(self._top_starred_block, dict) else {}
+        q = (cfg.get("repository_search_query") or "stars:>=1").strip()
+        cap = max(1, min(int(limit), 1000))  # Search API returns at most 1000 results
+        out: List[str] = []
+        page = 1
+        max_per_page = min(100, self.per_page)
+
+        while len(out) < cap:
+            per_page = min(max_per_page, cap - len(out))
+            params: Dict[str, Any] = {
+                "q": q,
+                "sort": "stars",
+                "order": "desc",
+                "per_page": per_page,
+                "page": page,
+            }
+            data = self._make_request("search/repositories", params)
+            items = data.get("items", [])
+            if not items:
+                if page == 1:
+                    self.logger.warning(
+                        "Repository search returned no items; check top_starred_repos.repository_search_query"
+                    )
+                break
+            for repo in items:
+                fn = repo.get("full_name")
+                if fn:
+                    out.append(fn)
+                if len(out) >= cap:
+                    break
+            page += 1
+            if len(items) < per_page:
+                break
+
+        self.logger.info(
+            "Resolved %d repositories for keyword issue search (target %d)",
+            len(out),
+            cap,
+        )
+        return out[:cap]
+
     def collect(self) -> List[Dict[str, Any]]:
         """Collect GitHub issues matching analogy keywords (see module doc for REST limits)."""
         self.logger.info("Starting GitHub collection...")
         records = []
 
-        agent_repos = [
-            "microsoft/vscode-jupyter",
-            "github/copilot-cli-for-beginners",
-            "getcursor/cursor",
-            "anthropics/anthropic-cookbook",
-        ]
-        # Dedupe while preserving order (configured repos first)
-        all_repos = list(dict.fromkeys([*self.search_repos, *agent_repos]))
+        all_repos: List[str] = []
+        top = self._top_starred_block
+        if top is None:
+            # Legacy YAML without top_starred_repos: use only search_repos
+            all_repos = list(dict.fromkeys([r for r in self.search_repos if r]))
+        elif isinstance(top, dict) and top.get("enabled", True):
+            n = int(top.get("count", 100))
+            self.logger.info("Resolving top %d starred repositories via search API...", n)
+            all_repos.extend(self._fetch_top_starred_repo_full_names(n))
+            for r in self.search_repos:
+                if r and r not in all_repos:
+                    all_repos.append(r)
+        else:
+            # top_starred_repos present but disabled, or invalid block: manual list only
+            all_repos = list(dict.fromkeys([r for r in self.search_repos if r]))
+
+        if not all_repos:
+            self.logger.warning("No repositories to search; enable top_starred_repos or set search_repos")
 
         for repo in all_repos:
             self.logger.info(f"Searching issues in {repo}...")
