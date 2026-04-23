@@ -13,7 +13,7 @@ import os
 import time
 from typing import Dict, List, Any, Optional
 import requests
-from base_collector import BaseCollector
+from collectors.base import BaseCollector
 
 
 class GithubCollector(BaseCollector):

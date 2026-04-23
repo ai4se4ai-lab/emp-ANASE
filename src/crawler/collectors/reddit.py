@@ -10,7 +10,7 @@ import time
 from typing import Dict, List, Any, Optional
 import praw
 from praw.models import Submission, Comment
-from base_collector import BaseCollector
+from collectors.base import BaseCollector
 
 
 class RedditCollector(BaseCollector):

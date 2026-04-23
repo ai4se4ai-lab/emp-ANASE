@@ -26,21 +26,39 @@ collect-github:
 collect-zenodo:
 	python main.py --config config.yaml --platforms zenodo
 
+collect-devto:
+	python main.py --config config.yaml --platforms devto
+
+collect-hashnode:
+	python main.py --config config.yaml --platforms hashnode
+
+collect-hn:
+	python main.py --config config.yaml --platforms hackernews
+
+collect-lobsters:
+	python main.py --config config.yaml --platforms lobsters
+
+collect-gitlab:
+	python main.py --config config.yaml --platforms gitlab
+
+collect-tier2:
+	python main.py --config config.yaml --platforms devto,hashnode,hackernews,lobsters,gitlab
+
 # Validation
 validate:
-	python -c "from data_validator import DataValidator; v = DataValidator(); r = v.validate_dataset('output/combined_analogies_*.csv'); v.generate_validation_report(r, 'output/validation_report.txt')"
+	python -c "from tools.data_validator import DataValidator; v = DataValidator(); r = v.validate_dataset('output/combined_analogies_*.csv'); v.generate_validation_report(r, 'output/validation_report.txt')"
 
 # Analysis
 report:
-	python -c "from survey_collector import SurveyCollector; s = SurveyCollector(); s.generate_report()"
+	python -c "from tools.survey_collector import SurveyCollector; s = SurveyCollector(); s.generate_report()"
 
 # Testing
 test:
 	pytest tests/ -v
 
 lint:
-	black *.py
-	flake8 *.py --max-line-length=100
+	black . --include "\\.py$$"
+	flake8 . --max-line-length=100
 
 # Cleanup
 clean:
@@ -56,8 +74,14 @@ help:
 	@echo "  install      - Install dependencies"
 	@echo "  collect      - Run full data collection"
 	@echo "  collect-so   - Collect from Stack Overflow only"
-	@echo "  collect-reddit - Collect from Reddit only"
-	@echo "  collect-github - Collect from GitHub only"
+	@echo "  collect-reddit   - Collect from Reddit only"
+	@echo "  collect-github   - Collect from GitHub only"
+	@echo "  collect-devto    - Collect from DEV Community"
+	@echo "  collect-hashnode - Collect from Hashnode"
+	@echo "  collect-hn       - Collect from Hacker News"
+	@echo "  collect-lobsters - Collect from Lobsters"
+	@echo "  collect-gitlab   - Collect from GitLab"
+	@echo "  collect-tier2    - Collect from all Tier-2 sources"
 	@echo "  validate     - Validate collected data"
 	@echo "  report       - Generate survey report"
 	@echo "  test         - Run test suite"

@@ -183,6 +183,78 @@ platforms:
     servers: []
     channels: []
 
+  # ---------------------------------------------------------------------------
+  # Batch A: DEV Community (dev.to) — official Forem API, no auth required
+  # Optional API key (DEVTO_API_KEY) raises rate limit from ~10 to 1000 req/min
+  # ---------------------------------------------------------------------------
+  devto:
+    enabled: true
+    api_base: "https://dev.to/api"
+    per_page: 30          # max allowed by DEV.to API
+    max_pages: 50
+    fetch_comments: true
+    tags:
+      - "ai"
+      - "machinelearning"
+      - "github"
+      - "programming"
+      - "copilot"
+      - "chatgpt"
+      - "llm"
+      - "softwaredevelopment"
+    api_key: null         # Set via DEVTO_API_KEY env var (optional)
+
+  # ---------------------------------------------------------------------------
+  # Batch A: Hashnode — official GraphQL API, no auth required
+  # ---------------------------------------------------------------------------
+  hashnode:
+    enabled: true
+    api_url: "https://gql.hashnode.com"
+    per_page: 20
+    max_pages: 25         # per search query
+
+  # ---------------------------------------------------------------------------
+  # Batch B: Hacker News — Algolia HN Search API, no auth required
+  # ---------------------------------------------------------------------------
+  hackernews:
+    enabled: true
+    per_page: 20
+    max_pages: 20         # per query × type combination
+    fetch_comments: true  # also collect comment hits
+
+  # ---------------------------------------------------------------------------
+  # Batch B: Lobsters — official JSON feed, no auth required
+  # Keep rate_limit >= 1.0s; small community server
+  # ---------------------------------------------------------------------------
+  lobsters:
+    enabled: true
+    max_pages: 10
+    fetch_comments: true
+    tags:
+      - "ai"
+      - "programming"
+      - "practices"
+      - "tools"
+
+  # ---------------------------------------------------------------------------
+  # Batch C: GitLab — REST API v4, optional token (GITLAB_TOKEN)
+  # Without token: 60 req/hr.  With read_api token: 2000 req/min.
+  # ---------------------------------------------------------------------------
+  gitlab:
+    enabled: true
+    api_base: "https://gitlab.com/api/v4"
+    per_page: 100
+    max_pages: 10         # per issue-search batch
+    max_projects: 30
+    fetch_notes: true     # also collect issue comments
+    search_projects: []   # explicit "owner/repo" slugs (deduped with discovery)
+    project_search_terms:
+      - "copilot"
+      - "ai coding assistant"
+      - "llm"
+      - "chatgpt"
+    token: null           # Set via GITLAB_TOKEN env var
+
 # Deduplication settings
 deduplication:
   enabled: true
@@ -197,6 +269,11 @@ rate_limits:
   zenodo: 0.5
   huggingface: 0.5
   discord: 1.0
+  devto: 0.5            # no key: stay well under 10 req/min limit
+  hashnode: 0.5
+  hackernews: 0.3       # Algolia is generous; keep polite
+  lobsters: 1.0         # small server — be conservative
+  gitlab: 0.5           # 2 req/sec with token
 
 # Output schema fields
 output_schema:

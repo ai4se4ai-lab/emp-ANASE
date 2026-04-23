@@ -100,6 +100,58 @@ class DataValidator:
 
         return is_valid, msg
 
+    # ------------------------------------------------------------------ #
+    # Thread-integrity helpers for new sources                             #
+    # ------------------------------------------------------------------ #
+
+    def _check_thread_context(self, record: Dict[str, Any]) -> List[str]:
+        """
+        Validate thread-context fields for comment/note records from
+        platforms that carry a parent-thread relationship.
+
+        Returns a list of warning strings (empty = no issues found).
+        """
+        warnings: List[str] = []
+        source_type = record.get('source_type', '')
+        title = record.get('title', '') or ''
+
+        if source_type in ('comment', 'issue_note', 'reply'):
+            # These should always have a "Comment on: ..." title
+            if not title.startswith('Comment on:'):
+                warnings.append(
+                    f"Comment record missing thread context in title field "
+                    f"(got: '{title[:60]}')"
+                )
+            parent_ref = title.replace('Comment on:', '').strip()
+            if not parent_ref:
+                warnings.append("Thread context title is empty after 'Comment on:' prefix")
+
+        return warnings
+
+    def _check_new_source_url(self, url: str, platform: str) -> Tuple[bool, str]:
+        """
+        Lightweight structural URL check for new sources before hitting the network.
+        Returns (structurally_valid, reason).
+        """
+        if not url:
+            return False, "Empty URL"
+
+        parsed = urlparse(url)
+        expected_hosts = {
+            'devto': ('dev.to',),
+            'hashnode': ('hashnode.com', 'hashnode.dev'),
+            'hackernews': ('news.ycombinator.com', 'hn.algolia.com'),
+            'lobsters': ('lobste.rs',),
+            'gitlab': ('gitlab.com',),
+        }
+        if platform in expected_hosts:
+            if not any(parsed.netloc.endswith(h) for h in expected_hosts[platform]):
+                return False, (
+                    f"URL host '{parsed.netloc}' unexpected for platform '{platform}'. "
+                    f"Expected one of: {expected_hosts[platform]}"
+                )
+        return True, "OK"
+
     def _verify_content_match(self, url: str, expected_content: str) -> Tuple[bool, str]:
         """
         Verify that URL content contains expected text.
@@ -177,7 +229,19 @@ class DataValidator:
             validation['content_verified'] = content_ok
             validation['content_error'] = content_msg
 
-        # Step 3: Plausibility checks
+        # Step 3: Structural URL check for new sources
+        new_source_platforms = {'devto', 'hashnode', 'hackernews', 'lobsters', 'gitlab'}
+        if platform in new_source_platforms:
+            struct_ok, struct_msg = self._check_new_source_url(url, platform)
+            if not struct_ok:
+                validation['url_valid'] = False
+                validation['url_error'] = struct_msg
+
+        # Step 4: Thread-context integrity check
+        thread_warnings = self._check_thread_context(record)
+        validation['warnings'].extend(thread_warnings)
+
+        # Step 5: General plausibility checks
         if record.get('upvotes', 0) > 10000:
             validation['warnings'].append("Suspiciously high upvote count")
 
@@ -187,9 +251,14 @@ class DataValidator:
         if not record.get('author_handle'):
             validation['warnings'].append("Missing author information")
 
+        if record.get('analogy_confidence', 0) == 0.0 and record.get('analogy_present'):
+            validation['warnings'].append(
+                "analogy_present=True but analogy_confidence=0.0 — possible detection issue"
+            )
+
         # Overall validity
         validation['overall_valid'] = (
-            validation['url_valid'] and 
+            validation['url_valid'] and
             (validation['content_verified'] or not content)
         )
 
@@ -235,16 +304,27 @@ class DataValidator:
             (validation_df['url_valid']) & (~validation_df['content_verified'])
         ]['content_error'].value_counts().to_dict()
 
-        # Platform breakdown
+        # Platform breakdown with source-type sub-counts
         platform_stats = {}
         for platform in validation_df['platform'].unique():
             platform_df = validation_df[validation_df['platform'] == platform]
-            platform_stats[platform] = {
+            stat: Dict[str, Any] = {
                 'total': len(platform_df),
-                'valid_urls': platform_df['url_valid'].sum(),
-                'valid_content': platform_df['content_verified'].sum(),
-                'overall_valid': platform_df['overall_valid'].sum()
+                'valid_urls': int(platform_df['url_valid'].sum()),
+                'valid_content': int(platform_df['content_verified'].sum()),
+                'overall_valid': int(platform_df['overall_valid'].sum()),
             }
+            # Source-type sub-breakdown from the original df (before validation)
+            if 'source_type' in df.columns:
+                src_counts = df[df['platform'] == platform]['source_type'].value_counts().to_dict()
+                stat['source_type_counts'] = src_counts
+            platform_stats[platform] = stat
+
+        # Count thread-integrity warnings
+        thread_warn_count = sum(
+            1 for v in validation_df['warnings']
+            if any('thread context' in w.lower() for w in (v if isinstance(v, list) else []))
+        )
 
         report = {
             'total_records': total,
@@ -257,6 +337,7 @@ class DataValidator:
             'url_errors': url_errors,
             'content_errors': content_errors,
             'platform_stats': platform_stats,
+            'thread_warnings_count': thread_warn_count,
             'validation_details': validation_df
         }
 
@@ -302,19 +383,36 @@ class DataValidator:
         lines.append("PLATFORM BREAKDOWN")
         lines.append("-" * 40)
         for platform, stats in report['platform_stats'].items():
-            lines.append(f"  {platform}:")
-            lines.append(f"    Total: {stats['total']}")
-            lines.append(f"    Valid URLs: {stats['valid_urls']}")
-            lines.append(f"    Overall Valid: {stats['overall_valid']}")
+            total_p = stats['total']
+            valid_p = stats['overall_valid']
+            rate_p = valid_p / total_p if total_p else 0.0
+            lines.append(
+                f"  {platform:20s}: {valid_p:4d}/{total_p:4d} valid ({rate_p:.0%})"
+                f"  |  URL ok: {stats['valid_urls']:4d}"
+            )
+            # Per source-type sub-breakdown if available
+            if 'source_type_counts' in stats:
+                for stype, scnt in stats['source_type_counts'].items():
+                    lines.append(f"    {'└─ ' + stype:22s}: {scnt:4d}")
         lines.append("")
+
+        # Thread-integrity warnings summary
+        if report.get('thread_warnings_count', 0):
+            lines.append("THREAD INTEGRITY WARNINGS")
+            lines.append("-" * 40)
+            lines.append(
+                f"  {report['thread_warnings_count']} comment/note records have "
+                "missing or malformed thread context. Review before publication."
+            )
+            lines.append("")
 
         # Critical warnings
         if report['overall_valid_rate'] < 0.9:
-            lines.append("⚠️  WARNING: Less than 90% of records are valid!")
+            lines.append("WARNING: Less than 90% of records are valid!")
             lines.append("    Review invalid records before publication.")
 
         if report['valid_url_rate'] < 0.95:
-            lines.append("⚠️  WARNING: Significant number of broken URLs detected!")
+            lines.append("WARNING: Significant number of broken URLs detected!")
             lines.append("    These may be fabricated or deleted posts.")
 
         lines.append("=" * 70)
@@ -337,7 +435,7 @@ if __name__ == "__main__":
         'record_id': 'GH-001',
         'url': 'https://github.com/orgs/community/discussions/163630',
         'platform': 'github',
-        'content': 'It's like babysitting a junior dev with amnesia'
+        'content': "It's like babysitting a junior dev with amnesia"
     }
 
     result = validator.validate_record(test_record)

@@ -1,4 +1,4 @@
 src/crawler/.env
 src/crawler/logs/*
 src/crawler/output/*
-src/crawler/__pycache__/*
+__pycache__/

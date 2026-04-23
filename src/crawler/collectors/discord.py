@@ -30,7 +30,7 @@ try:
 except ImportError:
     DISCORD_AVAILABLE = False
 
-from base_collector import BaseCollector
+from collectors.base import BaseCollector
 
 
 class DiscordCollector(BaseCollector):

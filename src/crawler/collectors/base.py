@@ -122,6 +122,42 @@ class BaseCollector(abc.ABC):
 
         return max(scores, key=scores.get)
 
+    # ------------------------------------------------------------------ #
+    # Shared domain-extraction helpers (used by all collectors)           #
+    # ------------------------------------------------------------------ #
+
+    _AGENT_MAP: Dict[str, str] = {
+        'github copilot': 'GitHub Copilot',
+        'copilot': 'GitHub Copilot',
+        'cursor': 'Cursor',
+        'claude code': 'Claude Code',
+        'claude': 'Claude',
+        'chatgpt': 'ChatGPT',
+        'gpt-4': 'GPT-4',
+        'gpt-5': 'GPT-5',
+        'gemini': 'Gemini',
+        'ai agent': 'Generic AI Agent',
+        'coding agent': 'Generic AI Agent',
+        'swe agent': 'SWE-agent',
+    }
+
+    def extract_target_domain(self, text: str) -> str:
+        """Identify which AI agent/tool is being discussed in *text*."""
+        text_lower = text.lower()
+        for key, value in self._AGENT_MAP.items():
+            if key in text_lower:
+                return value
+        return 'Unspecified AI Tool'
+
+    def extract_source_domain(self, quote: str) -> str:
+        """Extract the source-side comparison noun from an analogy quote."""
+        if not quote:
+            return ''
+        match = re.search(r'like a[n]?\s+([^,.;]+)', quote.lower())
+        if match:
+            return match.group(1).strip()
+        return ''
+
     def anonymize_author(self, handle: str) -> str:
         """Create consistent anonymized hash of author identifier."""
         return hashlib.sha256(handle.encode()).hexdigest()[:16]

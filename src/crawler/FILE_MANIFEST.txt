@@ -4,28 +4,48 @@ ANALOGICAL REASONING DATA COLLECTOR - FILE MANIFEST
 
 CORE FILES
 ----------
-main.py                          - Orchestrator script; coordinates all platforms
-base_collector.py                - Abstract base class with shared utilities
+main.py                          - CLI entrypoint for collection pipeline
+core/orchestrator.py             - Orchestrator logic; coordinates all platforms
+collectors/base.py               - Abstract base class with shared utilities
 config.yaml                      - Central configuration (API endpoints, keywords, schema)
+SOURCE_POLICY.md                 - Source allowlist + gate criteria (consult before adding sources)
 requirements.txt                 - Python dependencies
 setup.py                         - Package installation script
 Makefile                         - Common commands (install, collect, validate, etc.)
 __init__.py                      - Package initializer
 
-PLATFORM COLLECTORS
+PLATFORM COLLECTORS — Tier 1 (original sources)
 -------------------
-stackoverflow_collector.py       - Stack Exchange API collector
-reddit_collector.py              - Reddit API collector (via PRAW)
-github_collector.py              - GitHub REST API collector
-zenodo_collector.py              - Zenodo REST API collector
-discord_collector.py             - Discord bot collector (ETHICAL USE ONLY)
+collectors/stackoverflow.py      - Stack Exchange API collector
+collectors/reddit.py             - Reddit API collector (via PRAW)
+collectors/github.py             - GitHub REST API collector
+collectors/zenodo.py             - Zenodo REST API collector
+collectors/huggingface.py        - Hugging Face discussions collector
+
+PLATFORM COLLECTORS — Tier 2 (Batch A: long-form dev blogs)
+-------------------
+collectors/devto.py              - DEV Community (dev.to) articles + comments
+collectors/hashnode.py           - Hashnode blog posts (GraphQL API)
+
+PLATFORM COLLECTORS — Tier 2 (Batch B: link aggregators)
+-------------------
+collectors/hackernews.py         - Hacker News stories + comments (Algolia API)
+collectors/lobsters.py           - Lobsters stories + comments (JSON feed)
+
+PLATFORM COLLECTORS — Tier 2 (Batch C: code forges)
+-------------------
+collectors/gitlab.py             - GitLab public issues + notes (REST API)
+
+PLATFORM COLLECTORS — Tier 3 (disabled by default — ethical/legal review required)
+-------------------
+collectors/discord.py            - Discord bot collector (ETHICAL USE ONLY)
 
 DATA MANAGEMENT
 ---------------
-deduplicator.py                  - Cross-platform deduplication (hash + TF-IDF similarity)
-data_validator.py                - URL resolution and content verification
-survey_collector.py              - IRB-compliant survey data management
-analysis_template.py             - Statistical analysis and visualization template
+core/deduplicator.py             - Cross-platform deduplication (hash + TF-IDF similarity)
+tools/data_validator.py          - URL resolution and content verification
+tools/survey_collector.py        - IRB-compliant survey data management
+examples/analysis_template.py    - Statistical analysis and visualization template
 
 CONFIGURATION & CREDENTIALS
 ---------------------------
@@ -76,7 +96,7 @@ USAGE WORKFLOW
    $ make validate             # Verify URLs and content
 
 5. ANALYZE
-   $ python analysis_template.py
+   $ python examples/analysis_template.py
 
 ================================================================================
 ETHICAL CHECKLIST
@@ -100,12 +120,12 @@ in the original paper:
 
 ORIGINAL PROBLEM                    FRAMEWORK SOLUTION
 ----------------                    ------------------
-Unverifiable GitHub discussions     Real-time URL validation via data_validator.py
+Unverifiable GitHub discussions     Real-time URL validation via tools/data_validator.py
 Fabricated academic citations       No citations generated; only raw data collected
 Impossible "753 unique developers"  Cross-platform deduplication explicitly documented
                       as impossible without identity linking
 Missing replication package         Automated export to standardized CSV + JSON
-No statistical tests                analysis_template.py with Kruskal-Wallis, 
+No statistical tests                examples/analysis_template.py with Kruskal-Wallis, 
                                   Mann-Whitney U, Spearman correlation
 No confidence intervals             Inferential statistics included in analysis
 

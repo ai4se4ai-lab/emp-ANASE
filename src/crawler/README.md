@@ -1,6 +1,6 @@
 # Analogical Reasoning Data Collector
 
-A comprehensive, ethically-compliant data collection framework for studying analogical reasoning in agentic software engineering. This tool collects publicly available developer discussions from Stack Overflow, Reddit, GitHub, and Zenodo using official APIs.
+A comprehensive, ethically-compliant data collection framework for studying analogical reasoning in agentic software engineering.
 
 ## ⚠️ Ethical & Legal Requirements
 
@@ -24,16 +24,29 @@ crawler/
 ├── config.yaml                 # Main configuration
 ├── .env.example               # API key template
 ├── requirements.txt           # Python dependencies
-├── main.py                    # Orchestrator script
-├── base_collector.py          # Abstract base class
-├── stackoverflow_collector.py # Stack Overflow API collector
-├── reddit_collector.py        # Reddit API collector (PRAW)
-├── github_collector.py        # GitHub API collector
-├── zenodo_collector.py        # Zenodo API collector
-├── discord_collector.py       # Discord bot (ETHICAL USE ONLY)
-├── deduplicator.py            # Cross-platform deduplication
-├── survey_collector.py        # Survey data management
-├── data_validator.py          # URL/content verification
+├── main.py                    # CLI entrypoint wrapper
+├── SOURCE_POLICY.md            # Source allowlist + gate criteria
+├── collectors/                # Platform-specific collectors
+│   ├── base.py
+│   ├── stackoverflow.py       # Tier 1
+│   ├── reddit.py              # Tier 1
+│   ├── github.py              # Tier 1
+│   ├── zenodo.py              # Tier 1
+│   ├── huggingface.py         # Tier 1
+│   ├── devto.py               # Tier 2 — Batch A
+│   ├── hashnode.py            # Tier 2 — Batch A
+│   ├── hackernews.py          # Tier 2 — Batch B
+│   ├── lobsters.py            # Tier 2 — Batch B
+│   ├── gitlab.py              # Tier 2 — Batch C
+│   └── discord.py             # Tier 3 — disabled by default
+├── core/                      # Pipeline orchestration and core logic
+│   ├── orchestrator.py
+│   └── deduplicator.py
+├── tools/                     # Data quality and survey utilities
+│   ├── data_validator.py
+│   └── survey_collector.py
+├── examples/                  # Analysis scaffolding
+│   └── analysis_template.py
 └── output/                    # Collected data (created at runtime)
     ├── stackoverflow_analogies.csv
     ├── reddit_analogies.csv
@@ -62,13 +75,19 @@ cp .env.example .env
 
 **Required credentials:**
 
-| Platform | Variable | How to Obtain |
-|----------|----------|---------------|
-| Stack Overflow | `STACKOVERFLOW_API_KEY` | [Stack Apps](https://stackapps.com/apps/oauth/register) (optional but recommended) |
-| Reddit | `REDDIT_CLIENT_ID`, `REDDIT_CLIENT_SECRET` | [Reddit Apps](https://www.reddit.com/prefs/apps) |
-| GitHub | `GITHUB_TOKEN` | [GitHub Settings](https://github.com/settings/tokens) (needs `repo` + `read:discussion`) |
-| Zenodo | None required | Search is public |
-| Discord | `DISCORD_BOT_TOKEN` | [Discord Developer Portal](https://discord.com/developers/applications) (requires server permission) |
+| Platform | Variable | Required? | How to Obtain |
+|----------|----------|-----------|---------------|
+| Stack Overflow | `STACKOVERFLOW_API_KEY` | Optional | [Stack Apps](https://stackapps.com/apps/oauth/register) |
+| Reddit | `REDDIT_CLIENT_ID`, `REDDIT_CLIENT_SECRET` | **Required** | [Reddit Apps](https://www.reddit.com/prefs/apps) |
+| GitHub | `GITHUB_TOKEN` | **Required** | [GitHub Settings](https://github.com/settings/tokens) (`repo` + `read:discussion`) |
+| Zenodo | — | None | Search is public |
+| Hugging Face | `HUGGINGFACE_TOKEN` | Optional | [HF Settings](https://huggingface.co/settings/tokens) |
+| DEV Community | `DEVTO_API_KEY` | Optional | [dev.to Settings](https://dev.to/settings/extensions) |
+| Hashnode | — | None | GraphQL API is public |
+| Hacker News | — | None | Algolia API is public |
+| Lobsters | — | None | JSON feed is public |
+| GitLab | `GITLAB_TOKEN` | Optional | [GitLab Settings](https://gitlab.com/-/user_settings/personal_access_tokens) (`read_api` scope) |
+| Discord | `DISCORD_BOT_TOKEN` | Required + permission | [Discord Developer Portal](https://discord.com/developers/applications) (server owner consent required) |
 
 ### 3. Configure Collection Parameters
 
@@ -82,11 +101,14 @@ Edit `config.yaml` to adjust:
 ### 4. Run Collection
 
 ```bash
-# Collect from all enabled platforms
+# Collect from all enabled platforms (Tier 1 + Tier 2)
 python main.py
 
 # Collect from specific platforms only
 python main.py --platforms stackoverflow,reddit
+
+# Collect from all Tier-2 new sources only
+python main.py --platforms devto,hashnode,hackernews,lobsters,gitlab
 
 # Skip deduplication (faster, but may include duplicates)
 python main.py --skip-dedup
@@ -154,10 +176,10 @@ The pipeline performs two-stage deduplication:
 
 ## 📝 Survey Data Collection
 
-For the survey component (n=52 in the paper), use `survey_collector.py`:
+For the survey component (n=52 in the paper), use `tools/survey_collector.py`:
 
 ```python
-from survey_collector import SurveyCollector
+from tools.survey_collector import SurveyCollector
 
 survey = SurveyCollector()
 survey.add_response(
@@ -176,10 +198,10 @@ survey.export("survey_data.csv")
 
 ## ✅ Data Validation
 
-Use `data_validator.py` to verify collected data before publication:
+Use `tools/data_validator.py` to verify collected data before publication:
 
 ```python
-from data_validator import DataValidator
+from tools.data_validator import DataValidator
 
 validator = DataValidator()
 results = validator.validate_dataset("output/combined_analogies.csv")
@@ -188,6 +210,53 @@ results = validator.validate_dataset("output/combined_analogies.csv")
 # - No fabricated citations
 # - Content matches URL
 # - Engagement metrics are plausible
+```
+
+## 🧪 Staged Pilot Rollout
+
+Before enabling new sources in a full collection run, validate each batch
+with a 1-day smoke test.  The recommended sequence:
+
+### Batch A — DEV Community + Hashnode
+
+```bash
+# Smoke test: 1 page per tag, no dedup
+python main.py --platforms devto,hashnode --skip-dedup
+# Review output
+python -c "
+import pandas as pd, glob
+f = sorted(glob.glob('output/*analogies*.csv'))[-1]
+df = pd.read_csv(f)
+print(df[df.platform.isin(['devto','hashnode'])][['platform','source_type','analogy_confidence']].describe())
+"
+```
+
+### Batch B — Hacker News + Lobsters
+
+```bash
+python main.py --platforms hackernews,lobsters --skip-dedup
+```
+
+### Batch C — GitLab
+
+```bash
+python main.py --platforms gitlab --skip-dedup
+```
+
+### Full Tier-2 run after pilots pass
+
+```bash
+python main.py --platforms devto,hashnode,hackernews,lobsters,gitlab
+# Or combined with Tier-1:
+python main.py
+```
+
+### Validate and compare yield
+
+```bash
+make validate
+# Check collection_report.txt for per-source analogy yield rates
+cat output/collection_report.txt
 ```
 
 ## 🐛 Troubleshooting
