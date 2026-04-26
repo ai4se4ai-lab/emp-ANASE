@@ -109,6 +109,7 @@ def collect_platform(platform_name: str, config: Dict[str, Any]) -> List[Dict[st
 
 def apply_runtime_overrides(config: Dict[str, Any], args: argparse.Namespace) -> Dict[str, Any]:
     """Apply CLI-only overrides without mutating config.yaml on disk."""
+    # --- GitHub repo selection ---
     github_cfg = config.setdefault('platforms', {}).setdefault('github', {})
 
     if args.github_repos:
@@ -119,8 +120,6 @@ def apply_runtime_overrides(config: Dict[str, Any], args: argparse.Namespace) ->
         ]
         github_cfg['search_repos'] = repos
 
-        # Explicit repo mode should mean "only these repos" unless the caller
-        # also asks for top repos in the same run.
         if args.github_top_repos is None:
             top_cfg = github_cfg.setdefault('top_starred_repos', {})
             top_cfg['enabled'] = False
@@ -129,6 +128,20 @@ def apply_runtime_overrides(config: Dict[str, Any], args: argparse.Namespace) ->
         top_cfg = github_cfg.setdefault('top_starred_repos', {})
         top_cfg['enabled'] = True
         top_cfg['count'] = args.github_top_repos
+
+    # --- LLM verifier overrides ---
+    lv_cfg = config.setdefault('llm_verifier', {})
+
+    if getattr(args, 'llm_enable', None):
+        lv_cfg['enabled'] = True
+
+    if getattr(args, 'llm_provider', None):
+        lv_cfg['provider'] = args.llm_provider
+        if args.llm_provider != 'disabled':
+            lv_cfg['enabled'] = True
+
+    if getattr(args, 'llm_model', None):
+        lv_cfg['model'] = args.llm_model
 
     return config
 
@@ -221,6 +234,21 @@ def generate_report(df: pd.DataFrame, dedup_result: Dict[str, Any], output_dir: 
                 report.append(f"  {phase:20s}: {count:5d} records")
         report.append("")
 
+        # ---- LLM verifier stats ----
+        if 'llm_verified' in df.columns:
+            llm_run = df['llm_provider_model'].dropna().loc[lambda s: s != '']
+            if not llm_run.empty:
+                model_used = llm_run.iloc[0]
+                llm_accepted = int(df['llm_verified'].sum())
+                llm_total = len(df)
+                report.append("LLM VERIFICATION RESULTS")
+                report.append("-" * 40)
+                report.append(f"  Model used           : {model_used}")
+                report.append(f"  Records checked      : {llm_total}")
+                report.append(f"  Confirmed analogies  : {llm_accepted}")
+                report.append(f"  Acceptance rate      : {llm_accepted / llm_total:.1%}")
+                report.append("")
+
         # ---- Deduplication stats ----
         if dedup_result:
             report.append("DEDUPLICATION RESULTS")
@@ -307,6 +335,25 @@ def main():
             'Enable GitHub top-starred repository discovery for this run and '
             'collect from the top N repositories. Can be combined with --github-repos.'
         )
+    )
+    parser.add_argument(
+        '--llm-provider',
+        default=None,
+        help=(
+            'Override llm_verifier.provider from config for this run. '
+            'Choices: openai | anthropic | ollama | lmstudio | openai_compatible | disabled'
+        )
+    )
+    parser.add_argument(
+        '--llm-model',
+        default=None,
+        help='Override llm_verifier.model from config for this run (e.g. gpt-4o-mini).'
+    )
+    parser.add_argument(
+        '--llm-enable',
+        action='store_true',
+        default=None,
+        help='Enable the LLM second-pass verifier for this run (overrides config enabled: false).'
     )
 
     args = parser.parse_args()

@@ -280,6 +280,60 @@ make validate
 cat output/collection_report.txt
 ```
 
+## LLM Second-Pass Verifier
+
+After the heuristic detector finds a candidate analogy, an optional LLM classifier
+confirms it is a genuine cross-domain mapping — not an exemplification ("things like
+a language server") or a preference statement ("I'd like faster builds").
+
+### Quick start (zero cost — local Ollama)
+
+```bash
+# 1. Install Ollama (https://ollama.com/download)
+ollama pull llama3.1:8b-instruct
+
+# 2. In config.yaml set:
+#    llm_verifier.enabled: true
+#    llm_verifier.provider: ollama
+#    llm_verifier.model: llama3.1:8b-instruct
+
+# 3. Run — LLM verifier starts automatically
+python main.py --platforms github --github-repos microsoft/vscode
+```
+
+### Enable from the command line (no config edit required)
+
+```bash
+# Use Ollama for this run only
+python main.py --platforms github --llm-enable --llm-provider ollama --llm-model llama3.1:8b-instruct
+
+# Use OpenAI GPT-4o-mini (OPENAI_API_KEY must be in .env)
+python main.py --platforms github --llm-enable --llm-provider openai --llm-model gpt-4o-mini
+
+# Disable LLM for a quick run even if config has enabled: true
+python main.py --platforms github --llm-provider disabled
+```
+
+### Supported providers
+
+| config `provider` | What to set | Key required? |
+|-------------------|-------------|---------------|
+| `ollama` | start Ollama locally | No |
+| `lmstudio` | start LM Studio server | No |
+| `openai_compatible` | any vLLM / llama.cpp / Groq / OpenRouter endpoint | Optional |
+| `openai` | OpenAI cloud | `OPENAI_API_KEY` |
+| `anthropic` | Anthropic Claude | `ANTHROPIC_API_KEY` |
+| `disabled` | heuristic-only | — |
+
+### Manual validation harness
+
+```bash
+python -m tools.validate_analogies --csv output/github_microsoft_vscode_analogies.csv --sample 50
+```
+
+Prints each detected quote with context, lets you label `y/n`, and saves a
+precision report comparing your labels to LLM verdicts.
+
 ## 🐛 Troubleshooting
 
 ### "Rate limit exceeded"

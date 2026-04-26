@@ -18,3 +18,9 @@ scikit-learn>=1.3.0
 
 # Optional: for Discord
 # discord.py>=2.3.0  # Only if Discord data collection is approved by server owners
+
+# LLM second-pass verifier
+# openai SDK covers OpenAI cloud, LM Studio, and any openai_compatible endpoint.
+openai>=1.0.0
+# Anthropic SDK — only needed when llm_verifier.provider = anthropic
+# anthropic>=0.34.0

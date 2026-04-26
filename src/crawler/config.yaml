@@ -385,6 +385,64 @@ platforms:
       - "performance"
     token: null           # Set via GITLAB_TOKEN env var
 
+# =============================================================================
+# Analogy detection filter settings
+# These control the Layer-1 heuristic sense-disambiguation in BaseCollector.
+# =============================================================================
+analogy_filters:
+  # Reject sentences beginning with exemplification heads like "things like X",
+  # "stuff like X", "options like X", "such as X", "e.g." etc.
+  reject_exemplification: true
+  # Reject sentences that express desire/preference: "I'd like", "would like", etc.
+  reject_preference: true
+  # Require a copula verb (is, are, feels, acts, …) within this many tokens before
+  # the analogy indicator. Sentences without one are considered non-analogical.
+  require_copula_within_tokens: 6
+  # SE terms that, when appearing right after "like a/an", should still be accepted
+  # because they carry metaphorical meaning in developer discourse.
+  cross_domain_keep:
+    - pipeline
+    - factory
+    - assembly line
+    - warehouse
+    - garden
+    - traffic
+    - recipe
+    - map
+    - black box
+    - rubber duck
+
+# =============================================================================
+# LLM second-pass analogy verifier
+# Change `provider` and `model` to switch between cloud or local LLMs.
+# =============================================================================
+llm_verifier:
+  enabled: false            # Set to true to enable LLM verification pass
+  provider: ollama          # openai | anthropic | ollama | lmstudio | openai_compatible | disabled
+  model: llama3.1:8b-instruct
+  temperature: 0
+  requests_per_second: 2   # applies to local servers too (avoids GPU thrash)
+  timeout_seconds: 60
+  health_check_on_start: true
+  cache_path: ./output/llm_cache.jsonl
+  context_chars: 600        # surrounding text chars sent alongside the quote
+
+  # Provider-specific settings. Only the active provider's block is used.
+  providers:
+    openai:
+      base_url: https://api.openai.com/v1
+      api_key_env: OPENAI_API_KEY
+    anthropic:
+      api_key_env: ANTHROPIC_API_KEY
+    ollama:
+      base_url: http://localhost:11434  # default Ollama address
+    lmstudio:
+      base_url: http://localhost:1234/v1
+      api_key_env: ""                   # LM Studio ignores the key
+    openai_compatible:
+      base_url: http://localhost:8000/v1
+      api_key_env: LOCAL_LLM_API_KEY
+
 # Deduplication settings
 deduplication:
   enabled: true
@@ -432,3 +490,10 @@ output_schema:
   - views
   - verified_by
   - collector_version
+  # LLM second-pass fields (empty strings when LLM is disabled)
+  - llm_verified
+  - llm_confidence
+  - llm_source_domain
+  - llm_target_domain
+  - llm_mapping_summary
+  - llm_provider_model
