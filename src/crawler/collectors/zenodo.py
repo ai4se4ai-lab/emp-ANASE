@@ -79,29 +79,10 @@ class ZenodoCollector(BaseCollector):
         )
 
     def _extract_target_domain(self, text: str) -> str:
-        text_lower = text.lower()
-        agents = {
-            'github copilot': 'GitHub Copilot',
-            'copilot': 'GitHub Copilot',
-            'cursor': 'Cursor',
-            'claude code': 'Claude Code',
-            'claude': 'Claude',
-            'chatgpt': 'ChatGPT',
-            'ai agent': 'Generic AI Agent'
-        }
-        for key, value in agents.items():
-            if key in text_lower:
-                return value
-        return 'Unspecified AI Tool'
+        return self.extract_target_system(text)
 
     def _extract_source_domain(self, quote: str) -> str:
-        if not quote:
-            return ''
-        import re
-        match = re.search(r'like a[n]?\s+([^,.;]+)', quote.lower())
-        if match:
-            return match.group(1).strip()
-        return ''
+        return self.extract_source_domain(quote)
 
     def collect(self) -> List[Dict[str, Any]]:
         """Collect records from Zenodo."""

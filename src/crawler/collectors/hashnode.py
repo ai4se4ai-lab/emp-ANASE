@@ -135,11 +135,14 @@ class HashnodeCollector(BaseCollector):
     # ------------------------------------------------------------------ #
 
     def _build_search_queries(self) -> List[str]:
-        """Combine analogy indicator phrases with agent terms into batched queries."""
+        """Combine analogy phrases with broad software-engineering context terms."""
         indicators = ['analogy', 'metaphor', 'like a', 'similar to', 'works like']
-        agents = self.config['keywords']['agent_terms']
-        # Produce one compound query per agent term to maximise recall
-        return [f'"{agent}" {ind}' for agent in agents for ind in indicators[:2]]
+        contexts = [
+            'bug', 'debugging', 'architecture', 'api', 'database',
+            'cache', 'testing', 'deployment', 'refactoring', 'performance',
+            'microservices', 'git', 'docker',
+        ]
+        return [f'"{context}" "{indicator}"' for context in contexts for indicator in indicators[:3]]
 
     def collect(self) -> List[Dict[str, Any]]:
         self.logger.info("Starting Hashnode collection...")

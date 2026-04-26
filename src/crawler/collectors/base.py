@@ -40,7 +40,11 @@ class BaseCollector(abc.ABC):
 
         # Load keywords
         self.analogy_indicators = self.config['keywords']['analogy_indicators']
-        self.agent_terms = self.config['keywords']['agent_terms']
+        # Broad SE context terms define relevance for software-engineering analogies.
+        self.se_context_terms = self.config['keywords'].get(
+            'se_context_terms',
+            []
+        )
         self.exclusion_terms = self.config['keywords']['exclusion_terms']
         self.analogy_patterns = self.config['analogy_patterns']
 
@@ -61,16 +65,18 @@ class BaseCollector(abc.ABC):
         """
         text_lower = text.lower()
 
-        # Check for analogy indicators
+        # Check for analogy indicators and software-engineering context.
         indicator_hits = sum(1 for ind in self.analogy_indicators if ind.lower() in text_lower)
-        agent_term_hits = sum(1 for term in self.agent_terms if term.lower() in text_lower)
+        context_hits = sum(1 for term in self.se_context_terms if term.lower() in text_lower)
 
-        # Must contain both analogy language AND agent reference
-        if indicator_hits == 0 or agent_term_hits == 0:
+        # Must contain both analogy language AND software-engineering context.
+        # This captures analogies explaining bugs, solutions, APIs, systems,
+        # architecture, tests, deployments, and AI tools.
+        if indicator_hits == 0 or context_hits == 0:
             return False, 0.0
 
-        # Confidence based on indicator density and proximity
-        confidence = min(1.0, (indicator_hits * 0.3) + (agent_term_hits * 0.2))
+        # Confidence based on analogy indicator density and SE context density.
+        confidence = min(1.0, (indicator_hits * 0.3) + (context_hits * 0.15))
 
         # Boost confidence for explicit analogy words
         if any(word in text_lower for word in ['analogy', 'metaphor', 'like a', 'similar to']):
@@ -93,11 +99,20 @@ class BaseCollector(abc.ABC):
         """Extract the sentence or phrase containing the analogy."""
         sentences = re.split(r'(?<=[.!?])\s+', text)
 
+        # Prefer a sentence that contains both analogy language and SE context.
         for sentence in sentences:
             if any(ind.lower() in sentence.lower() for ind in self.analogy_indicators):
-                if any(term.lower() in sentence.lower() for term in self.agent_terms):
+                if any(term.lower() in sentence.lower() for term in self.se_context_terms):
                     quote = sentence.strip()
                     return quote[:max_length] + ('...' if len(quote) > max_length else '')
+
+        # Fallback: the analogy sentence may refer anaphorically to a previous
+        # SE sentence, e.g. "This cache invalidation bug is nasty. It's like a
+        # leaking pipe." Keep the analogy sentence rather than dropping quote.
+        for sentence in sentences:
+            if any(ind.lower() in sentence.lower() for ind in self.analogy_indicators):
+                quote = sentence.strip()
+                return quote[:max_length] + ('...' if len(quote) > max_length else '')
 
         return None
 
@@ -126,7 +141,45 @@ class BaseCollector(abc.ABC):
     # Shared domain-extraction helpers (used by all collectors)           #
     # ------------------------------------------------------------------ #
 
-    _AGENT_MAP: Dict[str, str] = {
+    _TARGET_SYSTEM_MAP: Dict[str, str] = {
+        'architecture': 'Architecture',
+        'design pattern': 'Design Pattern',
+        'api': 'API',
+        'endpoint': 'API Endpoint',
+        'database': 'Database',
+        'schema': 'Database Schema',
+        'cache': 'Cache',
+        'queue': 'Queue',
+        'thread': 'Concurrency',
+        'process': 'Process',
+        'dependency': 'Dependency',
+        'bug': 'Bug',
+        'error': 'Error',
+        'exception': 'Exception',
+        'crash': 'Crash',
+        'debug': 'Debugging',
+        'fix': 'Fix/Solution',
+        'solution': 'Solution',
+        'test': 'Testing',
+        'deploy': 'Deployment',
+        'build': 'Build System',
+        'ci': 'CI/CD',
+        'pipeline': 'Pipeline',
+        'refactor': 'Refactoring',
+        'performance': 'Performance',
+        'latency': 'Performance',
+        'memory': 'Memory',
+        'algorithm': 'Algorithm',
+        'function': 'Function',
+        'class': 'Class/Object',
+        'method': 'Method',
+        'compiler': 'Compiler',
+        'runtime': 'Runtime',
+        'docker': 'Containerization',
+        'kubernetes': 'Orchestration',
+        'git': 'Version Control',
+        'branch': 'Version Control',
+        'merge': 'Version Control',
         'github copilot': 'GitHub Copilot',
         'copilot': 'GitHub Copilot',
         'cursor': 'Cursor',
@@ -141,13 +194,17 @@ class BaseCollector(abc.ABC):
         'swe agent': 'SWE-agent',
     }
 
-    def extract_target_domain(self, text: str) -> str:
-        """Identify which AI agent/tool is being discussed in *text*."""
+    def extract_target_system(self, text: str) -> str:
+        """Identify the software concept/tool being explained in *text*."""
         text_lower = text.lower()
-        for key, value in self._AGENT_MAP.items():
+        for key, value in self._TARGET_SYSTEM_MAP.items():
             if key in text_lower:
                 return value
-        return 'Unspecified AI Tool'
+        return 'Unspecified Software Concept'
+
+    def extract_target_domain(self, text: str) -> str:
+        """Backward-compatible alias for the CSV field `target_domain`."""
+        return self.extract_target_system(text)
 
     def extract_source_domain(self, quote: str) -> str:
         """Extract the source-side comparison noun from an analogy quote."""

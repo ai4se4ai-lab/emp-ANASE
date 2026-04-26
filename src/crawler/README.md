@@ -1,6 +1,6 @@
 # Analogical Reasoning Data Collector
 
-A comprehensive, ethically-compliant data collection framework for studying analogical reasoning in agentic software engineering.
+A comprehensive, ethically-compliant data collection framework for studying analogical reasoning in software engineering. It collects developer analogies used to explain bugs, solutions, architecture, APIs, systems, tools, workflows, and AI coding agents.
 
 ## ⚠️ Ethical & Legal Requirements
 
@@ -125,18 +125,18 @@ Each collected record contains:
 | `source_type` | Post, comment, issue, etc. | `question` |
 | `url` | Direct link to source | `https://stackoverflow.com/questions/...` |
 | `archive_url` | Web archive snapshot | `https://webcache.googleusercontent.com/...` |
-| `title` | Post title | "How to debug Copilot suggestions?" |
+| `title` | Post title | "How to debug cache invalidation?" |
 | `author_handle` | Username (anonymized in replication) | `dev_user_42` |
 | `author_id_hash` | SHA-256 hash for deduplication | `a3f5c8...` |
 | `post_date` | ISO 8601 timestamp | `2025-10-15T14:30:00` |
 | `collection_date` | When we collected it | `2026-04-22T09:23:00` |
-| `content` | Full text | "Copilot is like a junior dev who..." |
+| `content` | Full text | "This cache behaves like a leaking bucket..." |
 | `content_length` | Character count | `450` |
 | `analogy_present` | Boolean flag | `True` |
 | `analogy_types` | Comma-separated categories | `functional,process` |
 | `analogy_quote` | Exact analogy substring | "like a junior dev who..." |
 | `analogy_confidence` | Detection confidence (0-1) | `0.85` |
-| `target_domain` | AI tool being described | `GitHub Copilot` |
+| `target_domain` | Software concept being explained | `Cache`, `API`, `Bug`, `Architecture` |
 | `source_domain` | Real-world comparison | `junior developer` |
 | `sldc_phase` | Software lifecycle phase | `debugging` |
 | `engagement_score` | Platform-specific metric | `42` |
@@ -152,11 +152,10 @@ The collector uses a two-stage heuristic:
 
 1. **Keyword Matching**: Content must contain BOTH:
    - An analogy indicator ("like a", "similar to", "analogy", "metaphor", etc.)
-   - An agent term ("Copilot", "Cursor", "AI agent", etc.)
+   - A software-engineering context term ("bug", "API", "cache", "architecture", "test", "deployment", etc.)
 
-2. **Exclusion Filtering**: Content is excluded if it contains:
+2. **Exclusion Filtering**: Content is excluded if it is clearly outside software engineering, such as:
    - AI art/generation terms ("DALL-E", "Midjourney")
-   - Gaming terms
    - Non-developer contexts
 
 3. **Classification**: Analogies are categorized using pattern matching:
@@ -185,11 +184,18 @@ survey = SurveyCollector()
 survey.add_response(
     participant_id="P001",
     experience_years=6,
+    primary_role="Backend Developer",
+    target_concept="Cache invalidation bug",
+    team_size="2-5",
+    uses_analogies=True,
     analogy_types=["functional", "process"],
+    sldc_phases=["debugging"],
     effectiveness_rating=4,
-    critical_thinking_improved=True,
+    critical_thinking_rating=4,
+    confusion_experienced=False,
     breakdown_experienced=False,
-    open_ended="I think of Copilot like a very fast junior dev..."
+    open_ended_analogy="I think of our cache invalidation bug like a leaking pipe...",
+    consent_given=True,
 )
 survey.export("survey_data.csv")
 ```
@@ -286,7 +292,7 @@ If you use this tool in your research, cite:
 @software{analogical_reasoning_collector,
   title = {Analogical Reasoning Data Collector},
   year = {2026},
-  note = {Academic data collection framework for agentic SE research}
+  note = {Academic data collection framework for software engineering analogy research}
 }
 ```
 

@@ -33,7 +33,7 @@ class SurveyCollector:
                      participant_id: str,
                      experience_years: int,
                      primary_role: str,
-                     ai_agent_used: str,
+                     target_concept: str,
                      team_size: str,
                      uses_analogies: bool,
                      analogy_types: List[str],
@@ -56,9 +56,9 @@ class SurveyCollector:
             participant_id: Unique identifier (will be hashed)
             experience_years: Years of software development experience
             primary_role: Frontend/Backend, Full-stack, DevOps, Architect, etc.
-            ai_agent_used: GitHub Copilot, Cursor, Claude Code, Custom, etc.
+            target_concept: Bug, API, cache, deployment, code review, AI tool, etc.
             team_size: Solo, 2-5, 6-15, 16+
-            uses_analogies: Whether participant uses analogies with AI agents
+            uses_analogies: Whether participant uses analogies to explain software concepts
             analogy_types: List of analogy types used (structural, functional, process, cross-domain)
             sldc_phases: SDLC phases where analogies are used
             effectiveness_rating: 1-5 Likert scale for understanding improvement
@@ -82,7 +82,7 @@ class SurveyCollector:
             'participant_hash': hashlib.sha256(participant_id.encode()).hexdigest()[:16],
             'experience_years': experience_years,
             'primary_role': primary_role,
-            'ai_agent_used': ai_agent_used,
+            'target_concept': target_concept,
             'team_size': team_size,
             'uses_analogies': uses_analogies,
             'analogy_types': ','.join(analogy_types),
@@ -122,7 +122,7 @@ class SurveyCollector:
             'experience_mean': df['experience_years'].mean(),
             'experience_std': df['experience_years'].std(),
             'role_distribution': df['primary_role'].value_counts().to_dict(),
-            'agent_distribution': df['ai_agent_used'].value_counts().to_dict(),
+            'target_concept_distribution': df['target_concept'].value_counts().to_dict(),
             'team_size_distribution': df['team_size'].value_counts().to_dict(),
             'effectiveness_mean': df['effectiveness_rating'].mean(),
             'effectiveness_std': df['effectiveness_rating'].std(),
@@ -187,9 +187,9 @@ class SurveyCollector:
         for role, count in demo.get('role_distribution', {}).items():
             report.append(f"  {role}: {count}")
         report.append("")
-        report.append("AI Agent Distribution:")
-        for agent, count in demo.get('agent_distribution', {}).items():
-            report.append(f"  {agent}: {count}")
+        report.append("Target Concept Distribution:")
+        for concept, count in demo.get('target_concept_distribution', {}).items():
+            report.append(f"  {concept}: {count}")
         report.append("")
         report.append("EFFECTIVENESS")
         report.append("-" * 40)
@@ -223,7 +223,7 @@ if __name__ == "__main__":
         participant_id="P001",
         experience_years=6,
         primary_role="Full-stack Developer",
-        ai_agent_used="GitHub Copilot",
+        target_concept="Cache invalidation bug",
         team_size="2-5",
         uses_analogies=True,
         analogy_types=["functional", "process"],
@@ -232,7 +232,7 @@ if __name__ == "__main__":
         critical_thinking_rating=4,
         confusion_experienced=True,
         breakdown_experienced=False,
-        open_ended_analogy="I think of Copilot like a very enthusiastic junior developer who writes tests that look comprehensive but miss edge cases.",
+        open_ended_analogy="I think of this cache invalidation bug like a leaking pipe: the water looks contained until pressure builds elsewhere.",
         consent_given=True
     )
 

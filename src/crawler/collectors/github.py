@@ -123,36 +123,19 @@ class GithubCollector(BaseCollector):
         )
 
     def _extract_target_domain(self, text: str) -> str:
-        text_lower = text.lower()
-        agents = {
-            'github copilot': 'GitHub Copilot',
-            'copilot': 'GitHub Copilot',
-            'cursor': 'Cursor',
-            'claude code': 'Claude Code',
-            'claude': 'Claude',
-            'chatgpt': 'ChatGPT',
-            'ai agent': 'Generic AI Agent'
-        }
-        for key, value in agents.items():
-            if key in text_lower:
-                return value
-        return 'Unspecified AI Tool'
+        return self.extract_target_system(text)
 
     def _extract_source_domain(self, quote: str) -> str:
-        if not quote:
-            return ''
-        import re
-        match = re.search(r'like a[n]?\s+([^,.;]+)', quote.lower())
-        if match:
-            return match.group(1).strip()
-        return ''
+        return self.extract_source_domain(quote)
 
-    @staticmethod
-    def _keyword_query_batches() -> List[str]:
+    def _keyword_query_batches(self) -> List[str]:
         """Return search `q` fragments with at most five OR operators (GitHub Search limit)."""
         return [
-            'analogy OR metaphor OR "like a" OR "similar to" OR "junior dev"',
-            '"autopilot" OR "black box"',
+            'analogy OR metaphor OR "like a" OR "similar to"',
+            '"works like" OR "behaves like" OR "acts like" OR "think of it as"',
+            'bug OR error OR exception OR debug OR fix',
+            'architecture OR api OR database OR cache OR queue',
+            'test OR deploy OR build OR refactor OR performance',
         ]
 
     def _search_repo_issues(self, repo: str) -> List[Dict[str, Any]]:

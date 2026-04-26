@@ -145,8 +145,13 @@ class HackernewsCollector(BaseCollector):
     # ------------------------------------------------------------------ #
 
     def _build_queries(self) -> List[str]:
-        """Build one query per agent term."""
-        return [f'"{term}"' for term in self.config['keywords']['agent_terms']]
+        """Build broad SE analogy queries for HN search."""
+        indicators = ['analogy', 'metaphor', '"like a"', '"similar to"', '"works like"']
+        contexts = [
+            'bug', 'debugging', 'architecture', 'api', 'database',
+            'cache', 'testing', 'deployment', 'refactoring', 'performance',
+        ]
+        return [f'{indicator} {context}' for indicator in indicators for context in contexts]
 
     def _search_type(self, query: str, tags: str) -> List[Dict[str, Any]]:
         """Paginate through Algolia search results for a single query + tag filter."""

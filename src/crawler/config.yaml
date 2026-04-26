@@ -6,7 +6,7 @@
 # =============================================================================
 
 project:
-  name: "analogical_reasoning_agentic_se"
+  name: "analogical_reasoning_software_engineering"
   version: "1.0.0"
   output_dir: "./output"
   log_dir: "./logs"
@@ -20,17 +20,114 @@ date_range:
 keywords:
   analogy_indicators:
     - "like a"
+    - "like an"
+    - "looks like"
+    - "feels like"
     - "similar to"
+    - "analogous to"
     - "analogy"
     - "metaphor"
+    - "metaphorical"
     - "as if"
+    - "as though"
     - "just like"
+    - "much like"
     - "works like"
     - "behaves like"
+    - "acts like"
+    - "functions like"
+    - "serves as"
+    - "resembles"
+    - "is comparable to"
+    - "compared to"
+    - "can be compared to"
     - "think of it as"
-    - "imagine"
+    - "you can think of it as"
+    - "imagine it as"
+    - "picture it as"
+    - "visualize it as"
+    - "consider it as"
+    - "it's basically"
+    - "it's kind of like"
+    - "it's almost like"
+    - "in the same way"
+    - "in much the same way"
+    - "parallel to"
+    - "equivalent to"
+    - "maps to"
+    - "corresponds to"
+    - "mirror of"
+    - "modelled after"
 
-  agent_terms:
+  # Software-engineering context terms.
+  # A record is considered relevant when it contains analogy language AND at
+  # least one of these terms. This intentionally captures analogies about bugs,
+  # solutions, architecture, APIs, tests, deployments, and developer workflow,
+  # not only analogies about one specific tool family.
+  se_context_terms:
+    - "software"
+    - "code"
+    - "program"
+    - "application"
+    - "app"
+    - "system"
+    - "service"
+    - "module"
+    - "component"
+    - "package"
+    - "library"
+    - "framework"
+    - "architecture"
+    - "design"
+    - "pattern"
+    - "api"
+    - "endpoint"
+    - "interface"
+    - "database"
+    - "schema"
+    - "query"
+    - "cache"
+    - "queue"
+    - "thread"
+    - "process"
+    - "dependency"
+    - "bug"
+    - "error"
+    - "exception"
+    - "crash"
+    - "debug"
+    - "fix"
+    - "solution"
+    - "workaround"
+    - "issue"
+    - "pull request"
+    - "code review"
+    - "test"
+    - "unit test"
+    - "integration test"
+    - "deploy"
+    - "deployment"
+    - "build"
+    - "ci"
+    - "pipeline"
+    - "refactor"
+    - "performance"
+    - "latency"
+    - "memory"
+    - "algorithm"
+    - "function"
+    - "class"
+    - "method"
+    - "object"
+    - "variable"
+    - "compiler"
+    - "runtime"
+    - "container"
+    - "docker"
+    - "kubernetes"
+    - "git"
+    - "branch"
+    - "merge"
     - "AI agent"
     - "Copilot"
     - "Cursor"
@@ -46,7 +143,6 @@ keywords:
     - "DALL-E"
     - "Midjourney"
     - "Stable Diffusion"
-    - "game"
     - "non-developer"
 
 # Analogy type classification heuristics
@@ -59,6 +155,12 @@ analogy_patterns:
     - "foundation"
     - "building"
     - "blueprint"
+    - "pipeline"
+    - "graph"
+    - "tree"
+    - "network"
+    - "mesh"
+    - "skeleton"
   functional:
     - "tool"
     - "drill"
@@ -68,6 +170,12 @@ analogy_patterns:
     - "attachment"
     - "plugin"
     - "extension"
+    - "filter"
+    - "router"
+    - "translator"
+    - "adapter"
+    - "cache"
+    - "queue"
   process:
     - "junior dev"
     - "intern"
@@ -76,6 +184,12 @@ analogy_patterns:
     - "pair programming"
     - "code review"
     - "engineer"
+    - "assembly line"
+    - "workflow"
+    - "factory"
+    - "handoff"
+    - "debugging"
+    - "triage"
   cross_domain:
     - "lottery"
     - "weather"
@@ -84,6 +198,12 @@ analogy_patterns:
     - "autopilot"
     - "game"
     - "music"
+    - "plumbing"
+    - "traffic"
+    - "garden"
+    - "recipe"
+    - "map"
+    - "warehouse"
 
 # Platform-specific configurations
 platforms:
@@ -93,35 +213,40 @@ platforms:
     page_size: 100
     max_pages: 50
     tags:
+      - "debugging"
+      - "software-design"
+      - "design-patterns"
+      - "architecture"
+      - "api"
+      - "database"
+      - "multithreading"
+      - "performance"
+      - "testing"
+      - "unit-testing"
+      - "git"
+      - "docker"
+      - "kubernetes"
+      - "microservices"
+      - "refactoring"
+      - "dependency-injection"
       - "github-copilot"
       - "cursor-ide"
-      - "ai-code-generation"
-      - "github-copilot-chat"
-      - "chatgpt-api"
-      - "openai-api"
-      - "anthropic-api"
-      - "google-api"
-      - "llm"
-      - "gpt-4"
-      - "gpt-5"
-      - "prompt-engineering"
-      - "code-completion"
-      - "generative-ai"
-      - "vscode-extensions"
-      - "visual-studio-code"
-      - "artificial-intelligence"
     # Stack Exchange API key (optional but recommended for higher quota)
     api_key: null  # Set via STACKOVERFLOW_API_KEY env var
 
   reddit:
     enabled: true
     subreddits:
-      - "ChatGPTCoding"
-      - "cursor"
-      - "ClaudeAI"
       - "programming"
       - "softwareengineering"
-      - "LocalLLaMA"
+      - "ExperiencedDevs"
+      - "learnprogramming"
+      - "webdev"
+      - "devops"
+      - "AskProgramming"
+      - "coding"
+      - "ChatGPTCoding"
+      - "cursor"
     sort: "relevance"
     time_filter: "year"
     limit: 1000
@@ -170,7 +295,7 @@ platforms:
     per_page: 20
     max_results: 100
     # Hub repository search query used to discover candidates
-    repository_search_query: "copilot cursor claude chatgpt coding assistant software engineering"
+    repository_search_query: "software engineering debugging architecture api database testing devops"
     # Optional additional owner/repo names to scan (deduped with discovered repos)
     search_repos: []
     # Optional Hugging Face token (recommended for better limits)
@@ -194,14 +319,16 @@ platforms:
     max_pages: 50
     fetch_comments: true
     tags:
-      - "ai"
-      - "machinelearning"
-      - "github"
       - "programming"
-      - "copilot"
-      - "chatgpt"
-      - "llm"
       - "softwaredevelopment"
+      - "webdev"
+      - "devops"
+      - "database"
+      - "debugging"
+      - "testing"
+      - "architecture"
+      - "git"
+      - "ai"
     api_key: null         # Set via DEVTO_API_KEY env var (optional)
 
   # ---------------------------------------------------------------------------
@@ -249,10 +376,13 @@ platforms:
     fetch_notes: true     # also collect issue comments
     search_projects: []   # explicit "owner/repo" slugs (deduped with discovery)
     project_search_terms:
-      - "copilot"
-      - "ai coding assistant"
-      - "llm"
-      - "chatgpt"
+      - "software architecture"
+      - "debugging"
+      - "api"
+      - "database"
+      - "testing"
+      - "devops"
+      - "performance"
     token: null           # Set via GITLAB_TOKEN env var
 
 # Deduplication settings

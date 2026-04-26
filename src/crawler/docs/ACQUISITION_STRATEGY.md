@@ -1,7 +1,7 @@
-# Data Acquisition Strategy for Analogical Reasoning in Agentic Software Engineering
+# Data Acquisition Strategy for Analogical Reasoning in Software Engineering
 
 **Document type:** Methodology justification  
-**Scope:** Source selection, ranking rationale, sampling design, and validity considerations for the empirical corpus used to study how software developers use analogical language when reasoning about AI coding agents.
+**Scope:** Source selection, ranking rationale, sampling design, and validity considerations for the empirical corpus used to study how software developers use analogical language when explaining bugs, solutions, architecture, APIs, systems, workflows, tools, and AI coding agents.
 
 ---
 
@@ -9,16 +9,16 @@
 
 ### 1.1 What Are Analogies in This Study?
 
-In this research, an *analogy* is any passage in which a developer compares an AI coding agent (e.g., GitHub Copilot, Cursor, Claude Code, ChatGPT) to a concept drawn from another domain — human roles, mechanical tools, physical phenomena, or abstract processes.  Examples of the four analogy types the corpus targets:
+In this research, an *analogy* is any passage in which a developer compares a software-engineering concept to a concept drawn from another domain — human roles, mechanical tools, physical phenomena, workflows, maps, traffic, plumbing, factories, or abstract processes. The target may be a bug, solution, API, cache, database, architecture, deployment pipeline, code-review process, or AI coding agent. Examples of the four analogy types the corpus targets:
 
 | Type | Example |
 |------|---------|
-| **Process** | "Copilot is like a junior dev who never gets tired but also never remembers the last meeting." |
-| **Functional** | "Think of it as a very fast search engine that can also write." |
-| **Structural** | "It's an extra layer in your cognitive stack, sitting between intention and keystrokes." |
-| **Cross-domain** | "Trusting an AI agent to merge a PR is like handing the wheel to autopilot during takeoff." |
+| **Process** | "Debugging this race condition is like coordinating two people trying to use the same door at once." |
+| **Functional** | "Think of the cache as a small warehouse in front of the database." |
+| **Structural** | "The service boundary works like a wall between two rooms: communication is possible, but only through specific doors." |
+| **Cross-domain** | "A flaky test is like a smoke alarm with a dying battery: sometimes it warns you, sometimes it only creates noise." |
 
-Analogies are not merely rhetorical decoration.  Cognitive science research (Gentner, 1983; Hofstadter & Sander, 2013) establishes that analogical reasoning is a primary mechanism by which people construct and communicate mental models.  When developers write analogies about AI agents, they externalize the mental model they use to predict, trust, and debug those agents.  That makes analogies a direct empirical window into how agentic SE tools are actually understood in practice.
+Analogies are not merely rhetorical decoration. Cognitive science research (Gentner, 1983; Hofstadter & Sander, 2013) establishes that analogical reasoning is a primary mechanism by which people construct and communicate mental models. When developers write analogies about bugs, systems, APIs, tests, deployments, or AI agents, they externalize the mental model they use to predict behaviour, explain failures, justify design decisions, and communicate solutions. That makes analogies a direct empirical window into how software engineering knowledge is understood and transferred in practice.
 
 ### 1.2 Why Developer Platforms Specifically?
 
@@ -47,7 +47,7 @@ Each candidate source is scored on the following criteria:
 
 | Dimension | Description | Weight |
 |-----------|-------------|--------|
-| **Analogy density** | Estimated fraction of posts/items expected to contain analogy language about AI agents | 35% |
+| **Analogy density** | Estimated fraction of posts/items expected to contain analogy language in a software-engineering context | 35% |
 | **Methodological independence** | How different the communicative register is from already-collected sources (reduces corpus bias) | 25% |
 | **Acquisition friction** | Ease of API access, stability of endpoints, required credentials, and implementation effort | 25% |
 | **Ethical/legal risk** | TOS compliance certainty, PII exposure, redistribution restrictions | 15% |
@@ -62,21 +62,21 @@ The five Tier-1 sources were selected to establish a reliable, maximally accessi
 
 *Rationale:* Stack Overflow is the canonical reference for how developers articulate technical problems.  Its question-answer structure means analogies appear in two roles: explanatory (in answers, to clarify a concept) and problem-framing (in questions, to communicate symptoms).  The Stack Exchange API is among the most stable and well-documented in the developer tooling ecosystem, and data is released under CC BY-SA 4.0, which explicitly permits academic redistribution.
 
-*Expected yield:* High for functional and structural analogies.  Tags like `github-copilot`, `ai-code-generation`, and `code-completion` surface posts where developers are actively reasoning about what the tool *is* and *does*.
+*Expected yield:* High for functional and structural analogies. Tags such as `debugging`, `software-design`, `architecture`, `api`, `database`, `testing`, and `performance` surface posts where developers actively explain how a system behaves or how a solution should work.
 
 *Independence:* Provides the "formal Q&A" register — structured, technical, post-edited.
 
 #### Reddit
 
-*Rationale:* Reddit communities (subreddits) capture spontaneous, conversational developer opinion.  Unlike Stack Overflow, Reddit posts are rarely edited for precision; they reflect unfiltered first-person experience.  The PRAW wrapper makes access reliable and rate-limit-safe.  Subreddits like `r/ChatGPTCoding`, `r/cursor`, and `r/ClaudeAI` are specifically dedicated to the AI coding tools under study.
+*Rationale:* Reddit communities capture spontaneous, conversational developer opinion. Unlike Stack Overflow, Reddit posts are rarely edited for precision; they reflect unfiltered first-person experience. The PRAW wrapper makes access reliable and rate-limit-safe. Broad communities such as `r/programming`, `r/softwareengineering`, `r/ExperiencedDevs`, `r/webdev`, and `r/devops` cover bugs, solutions, architecture, tools, workflows, and developer practice.
 
-*Expected yield:* High for process and cross-domain analogies.  "Copilot is like having a rubber duck that talks back" is Reddit-native language.
+*Expected yield:* High for process and cross-domain analogies. "This refactor is like changing the engine while the car is moving" is Reddit-native language.
 
 *Independence:* Provides the "informal community opinion" register — emotional, first-person, present-tense experience.
 
 #### GitHub
 
-*Rationale:* GitHub issues and discussion threads are written *inside* the tool workflow, often at the exact moment a developer is interacting with an AI agent.  This gives the highest ecological validity of any source.  The GitHub REST API provides full-text search with boolean operators, enabling targeted analogy retrieval without retrieving irrelevant content.
+*Rationale:* GitHub issues and discussion threads are written *inside* the software-development workflow, often at the exact moment a developer is debugging, reviewing, designing, or integrating a solution. This gives the highest ecological validity of any source. The GitHub REST API provides full-text search with boolean operators, enabling targeted analogy retrieval without retrieving irrelevant content.
 
 *Expected yield:* Moderate density but very high quality.  Analogies in issue descriptions tend to be precise and actionable ("it behaves like a stateless RPC call — it has no memory of context between sessions").
 
@@ -104,11 +104,11 @@ The five Tier-1 sources were selected to establish a reliable, maximally accessi
 
 *Why this batch comes first among expansions:*
 
-Both platforms are explicitly built for long-form technical writing.  They are the primary venues where developers publish personal perspectives on AI tools in narrative form — exactly the register most likely to contain sustained analogical reasoning (multiple analogies developed within a single article).  Their APIs are stable, require no authentication for read access, and impose no restrictions on academic use.
+Both platforms are explicitly built for long-form technical writing. They are primary venues where developers publish tutorials, postmortems, architecture essays, debugging narratives, and tool evaluations — exactly the register most likely to contain sustained analogical reasoning (multiple analogies developed within a single article). Their APIs are stable, require no authentication for read access, and impose no restrictions on academic use.
 
 #### DEV Community (dev.to)
 
-DEV is the largest open-source-focused developer blogging platform.  Unlike Medium, all content is indexed by a public REST API.  Articles tagged `ai`, `copilot`, `chatgpt`, and `llm` consistently reach tens of thousands of readers and generate comment threads with high analogy density.
+DEV is the largest open-source-focused developer blogging platform. Unlike Medium, all content is indexed by a public REST API. Articles tagged `programming`, `softwaredevelopment`, `webdev`, `devops`, `database`, `debugging`, `testing`, and `architecture` produce long explanatory posts and comment threads with high analogy density.
 
 *Methodological justification:*
 The article-with-comments structure provides two independent analogy contexts from the same discussion: the author's composed, deliberate framing (article body) and the spontaneous reader reactions (comments).  This within-discussion contrast is methodologically valuable for studying whether analogies in reflective writing propagate into conversational agreement or challenge.
@@ -130,14 +130,14 @@ Hashnode's author base skews toward senior engineers who use analogies prescript
 
 *Why this batch comes second:*
 
-Both are link-aggregator communities where comments (rather than articles) are the primary discourse medium.  The comment thread structure creates a specific analogy context that neither the Q&A sources (SO) nor the blog sources (DEV/Hashnode) cover: *real-time analogical negotiation*, where one commenter offers an analogy and others immediately accept, refine, or reject it.  This dynamic is particularly valuable for studying how developer communities converge on or dispute mental models of AI agents.
+Both are link-aggregator communities where comments (rather than articles) are the primary discourse medium. The comment thread structure creates a specific analogy context that neither the Q&A sources (SO) nor the blog sources (DEV/Hashnode) cover: *real-time analogical negotiation*, where one commenter offers an analogy and others immediately accept, refine, or reject it. This dynamic is particularly valuable for studying how developer communities converge on or dispute mental models of software systems and engineering practice.
 
 #### Hacker News
 
 HN is the most widely read developer news community and has a strong presence among engineers from top-tier technology companies.  The official Algolia HN Search API provides full-text search across all stories and comments since 2006, including the date window relevant to this study (September 2025–February 2026).
 
 *Methodological justification:*
-HN threads about AI coding tools (e.g., Copilot launches, Claude Code announcements) generate hundreds of comments within hours of publication.  These threads contain concentrated bursts of comparative reasoning as developers rapidly form and share first impressions — a qualitatively distinct signal from the slower, more considered analogies in blog posts.
+HN threads about programming languages, databases, distributed systems, deployment outages, developer tools, and AI coding tools generate hundreds of comments within hours of publication. These threads contain concentrated bursts of comparative reasoning as developers rapidly form and share first impressions — a qualitatively distinct signal from the slower, more considered analogies in blog posts.
 
 *Thread context normalization:* The parent story title is resolved via the Firebase API and stored in the `title` field of each comment record, preserving the semantic context needed to interpret the analogy.
 
@@ -158,12 +158,12 @@ Lobsters' smaller scale (relative to HN) means analogy density per post is highe
 
 *Why this batch comes third:*
 
-GitLab expands the code-forge coverage established by GitHub in Tier 1.  GitHub and GitLab are complementary, not substitutable: many open-source projects that are politically uncomfortable with GitHub's Microsoft ownership (particularly in the AI tooling space) host on GitLab.  GitLab issue discussions about AI coding tools therefore represent a systematically different project population than GitHub.
+GitLab expands the code-forge coverage established by GitHub in Tier 1. GitHub and GitLab are complementary, not substitutable: many open-source, infrastructure, DevOps, and self-hosted projects have active GitLab issue trackers. GitLab issue discussions therefore represent a systematically different project population than GitHub.
 
 *Methodological justification:*
-GitLab issues involving AI coding tools often arise in projects that are *building* AI tools or *integrating* them — not just using them.  The analogies in these discussions tend to be more technical and architecture-oriented ("the agent should behave like a POSIX subprocess — blocking, with a clear stdin/stdout contract").  This provides the "system designer" perspective absent from the user-perspective analogies dominant in other sources.
+GitLab issues often arise in projects that are building infrastructure, developer tooling, CI/CD workflows, and production services. The analogies in these discussions tend to be technical and architecture-oriented ("the pipeline should behave like an assembly line: each stage receives one artifact and passes one artifact forward"). This provides the "system designer" perspective absent from the user-perspective analogies dominant in other sources.
 
-*Project discovery strategy:* The collector uses the GitLab search API to discover projects by keyword (`copilot`, `ai coding assistant`, `llm`, `chatgpt`), then searches for analogy keywords within each discovered project's issues.  This two-stage strategy avoids the combinatorial explosion of searching all ~10 million public projects.
+*Project discovery strategy:* The collector uses the GitLab search API to discover projects by broad software-engineering keywords (`software architecture`, `debugging`, `api`, `database`, `testing`, `devops`, `performance`), then searches for analogy keywords within each discovered project's issues. This two-stage strategy avoids the combinatorial explosion of searching all public projects.
 
 *Acquisition friction:* Moderate.  Without a token the rate limit is 60 req/hr.  A `read_api` personal access token raises this to 2000 req/min.  The free tier is sufficient for pilot runs; a token is recommended for production collection.
 
@@ -197,9 +197,9 @@ Speaker-attributed transcript data requires either (a) the YouTube Data API v3 c
 
 ### 3.1 Construct Validity
 
-The study's construct (analogical reasoning about AI agents) is operationalised through keyword matching: posts must contain both an *analogy indicator* (`"like a"`, `"similar to"`, `"metaphor"`, etc.) and an *agent term* (`"Copilot"`, `"Cursor"`, `"Claude Code"`, etc.).  This is a conservative, high-precision filter.
+The study's construct (analogical reasoning in software engineering) is operationalised through keyword matching: posts must contain both an *analogy indicator* (`"like a"`, `"similar to"`, `"metaphor"`, etc.) and a *software-engineering context term* (`"bug"`, `"API"`, `"cache"`, `"architecture"`, `"test"`, `"deployment"`, etc.). This is a conservative, high-precision filter designed to capture analogies that explain software systems, failures, fixes, or workflows.
 
-**Risk:** Analogies expressed without explicit indicators (e.g., "Copilot just autocompletes — it has no intent") will be missed.  
+**Risk:** Analogies expressed without explicit indicators (e.g., "The database is a warehouse for state") will be missed.  
 **Mitigation:** The keyword list is expandable via `config.yaml` without code changes.  The `analogy_confidence` score provides a graded measure that allows threshold tuning during analysis.
 
 ### 3.2 Internal Validity
@@ -211,14 +211,14 @@ The corpus spans multiple platforms, languages, and discourse contexts.  Analogy
 
 ### 3.3 External Validity
 
-Developers who write publicly about their AI tool experiences are not a random sample of all developers.  They tend to be more active in open-source communities and more opinionated.
+Developers who write publicly about software problems and solutions are not a random sample of all developers. They tend to be more active in open-source communities and more willing to explain technical reasoning in public.
 
 **Risk:** The corpus may over-represent enthusiasts (positive analogies) or vocal critics (negative analogies) and under-represent silent majority experiences.  
 **Mitigation:** The survey component (`tools/survey_collector.py`) is designed to sample outside the public discourse community.  The two corpora (discourse + survey) should be analysed separately and compared explicitly.
 
 ### 3.4 Temporal Validity
 
-AI coding tools are evolving rapidly.  An analogy that captures Copilot's behaviour in September 2025 may be obsolete by February 2026 after a major model update.
+Software systems, frameworks, and developer tools evolve rapidly. An analogy that captures a tool's behaviour or a best practice in September 2025 may be obsolete by February 2026 after a major release or architecture change.
 
 **Risk:** Temporal drift within the collection window may conflate different product states.  
 **Mitigation:** The `post_date` field is collected for all records.  Temporal analysis (by quarter) is included in `examples/analysis_template.py`.

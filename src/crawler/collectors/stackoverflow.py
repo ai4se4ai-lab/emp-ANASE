@@ -106,33 +106,12 @@ class StackoverflowCollector(BaseCollector):
         return data.get('items', [])
 
     def _extract_target_domain(self, text: str) -> str:
-        """Extract which AI agent/tool is being discussed."""
-        text_lower = text.lower()
-        agents = {
-            'github copilot': 'GitHub Copilot',
-            'copilot': 'GitHub Copilot',
-            'cursor': 'Cursor',
-            'claude code': 'Claude Code',
-            'claude': 'Claude',
-            'chatgpt': 'ChatGPT',
-            'gpt-4': 'GPT-4',
-            'ai agent': 'Generic AI Agent'
-        }
-        for key, value in agents.items():
-            if key in text_lower:
-                return value
-        return 'Unspecified AI Tool'
+        """Backward-compatible wrapper for broad software target extraction."""
+        return self.extract_target_system(text)
 
     def _extract_source_domain(self, quote: str) -> str:
         """Extract source domain from analogy quote."""
-        if not quote:
-            return ''
-        # Simple heuristic: look for "like a X" or "like an X"
-        import re
-        match = re.search(r'like a[n]?\s+([^,.;]+)', quote.lower())
-        if match:
-            return match.group(1).strip()
-        return ''
+        return self.extract_source_domain(quote)
 
     def collect(self) -> List[Dict[str, Any]]:
         """Collect questions and answers from Stack Overflow."""

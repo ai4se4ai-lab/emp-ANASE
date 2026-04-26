@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 setup(
     name="analogical-reasoning-collector",
     version="1.0.0",
-    description="Data collection framework for analogical reasoning in agentic software engineering research",
+    description="Data collection framework for analogical reasoning in software engineering research",
     author="Anonymous Authors",
     packages=find_packages(),
     install_requires=[

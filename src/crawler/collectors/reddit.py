@@ -21,7 +21,7 @@ class RedditCollector(BaseCollector):
         self.client_id = self.platform_config.get('client_id') or os.environ.get('REDDIT_CLIENT_ID')
         self.client_secret = self.platform_config.get('client_secret') or os.environ.get('REDDIT_CLIENT_SECRET')
         self.user_agent = self.platform_config.get('user_agent', 'AnalogicalReasoningResearch/1.0')
-        self.subreddits = self.platform_config.get('subreddits', ['ChatGPTCoding', 'programming'])
+        self.subreddits = self.platform_config.get('subreddits', ['programming', 'softwareengineering'])
         self.sort = self.platform_config.get('sort', 'relevance')
         self.time_filter = self.platform_config.get('time_filter', 'year')
         self.limit = self.platform_config.get('limit', 1000)
@@ -113,38 +113,20 @@ class RedditCollector(BaseCollector):
         )
 
     def _extract_target_domain(self, text: str) -> str:
-        text_lower = text.lower()
-        agents = {
-            'github copilot': 'GitHub Copilot',
-            'copilot': 'GitHub Copilot',
-            'cursor': 'Cursor',
-            'claude code': 'Claude Code',
-            'claude': 'Claude',
-            'chatgpt': 'ChatGPT',
-            'gpt-4': 'GPT-4',
-            'ai agent': 'Generic AI Agent'
-        }
-        for key, value in agents.items():
-            if key in text_lower:
-                return value
-        return 'Unspecified AI Tool'
+        return self.extract_target_system(text)
 
     def _extract_source_domain(self, quote: str) -> str:
-        if not quote:
-            return ''
-        import re
-        match = re.search(r'like a[n]?\s+([^,.;]+)', quote.lower())
-        if match:
-            return match.group(1).strip()
-        return ''
+        return self.extract_source_domain(quote)
 
     def collect(self) -> List[Dict[str, Any]]:
         """Collect submissions and comments from configured subreddits."""
         self.logger.info("Starting Reddit collection...")
         records = []
 
-        query = ' OR '.join([f'"{term}"' for term in self.config['keywords']['analogy_indicators']])
-        query += ' AND (' + ' OR '.join([f'"{term}"' for term in self.config['keywords']['agent_terms']]) + ')'
+        # Subreddits already provide the SE context; keep Reddit search compact
+        # because very long boolean queries are brittle in Reddit search.
+        indicator_terms = self.config['keywords']['analogy_indicators']
+        query = ' OR '.join([f'"{term}"' for term in indicator_terms[:20]])
 
         for subreddit_name in self.subreddits:
             self.logger.info(f"Searching r/{subreddit_name}...")
