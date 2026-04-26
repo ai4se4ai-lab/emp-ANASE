@@ -107,12 +107,27 @@ python main.py
 # Collect from specific platforms only
 python main.py --platforms stackoverflow,reddit
 
+# Collect from one GitHub repository without editing config.yaml
+python main.py --platforms github --github-repos microsoft/vscode --output github_microsoft_vscode_analogies.csv
+
+# Collect from GitHub's top 100 repositories (uses config repository_search_query)
+python main.py --platforms github --github-top-repos 100 --output github_top100_analogies.csv
+
+# Collect from top repositories plus explicit repositories
+python main.py --platforms github --github-top-repos 100 --github-repos microsoft/vscode,python/cpython
+
 # Collect from all Tier-2 new sources only
 python main.py --platforms devto,hashnode,hackernews,lobsters,gitlab
 
 # Skip deduplication (faster, but may include duplicates)
 python main.py --skip-dedup
 ```
+
+GitHub mode notes:
+- `--github-repos OWNER/REPO` disables top-repo discovery for that run and searches only the listed repositories.
+- `--github-top-repos N` enables top-starred repository discovery for that run and searches the top `N` repositories.
+- Passing both options searches the top `N` repositories plus the explicit repository list.
+- These flags are runtime-only; they do not modify `config.yaml`.
 
 ## 📊 Output Schema
 

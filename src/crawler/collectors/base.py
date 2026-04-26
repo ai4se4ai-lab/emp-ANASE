@@ -9,16 +9,19 @@ import logging
 import os
 import re
 from datetime import datetime
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Optional, Any, Union
 import yaml
 
 
 class BaseCollector(abc.ABC):
     """Abstract base class for all platform data collectors."""
 
-    def __init__(self, config_path: str = "config.yaml"):
-        with open(config_path, 'r') as f:
-            self.config = yaml.safe_load(f)
+    def __init__(self, config_path: Union[str, Dict[str, Any]] = "config.yaml"):
+        if isinstance(config_path, dict):
+            self.config = config_path
+        else:
+            with open(config_path, 'r') as f:
+                self.config = yaml.safe_load(f)
 
         self.platform_name = self.__class__.__name__.replace('Collector', '').lower()
         self.platform_config = self.config['platforms'].get(self.platform_name, {})

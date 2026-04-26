@@ -393,7 +393,7 @@ class DataValidator:
             # Per source-type sub-breakdown if available
             if 'source_type_counts' in stats:
                 for stype, scnt in stats['source_type_counts'].items():
-                    lines.append(f"    {'└─ ' + stype:22s}: {scnt:4d}")
+                    lines.append(f"    {'- ' + stype:22s}: {scnt:4d}")
         lines.append("")
 
         # Thread-integrity warnings summary

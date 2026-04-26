@@ -63,7 +63,7 @@ def load_config(config_path: str) -> Dict[str, Any]:
     return config
 
 
-def collect_platform(platform_name: str, config_path: str) -> List[Dict[str, Any]]:
+def collect_platform(platform_name: str, config: Dict[str, Any]) -> List[Dict[str, Any]]:
     """Initialize and run a specific platform collector."""
     logger = logging.getLogger('orchestrator')
 
@@ -95,7 +95,7 @@ def collect_platform(platform_name: str, config_path: str) -> List[Dict[str, Any
     try:
         module = importlib.import_module(module_name)
         collector_class = getattr(module, class_name)
-        collector = collector_class(config_path)
+        collector = collector_class(config)
 
         logger.info(f"Starting collection from {platform_name}...")
         records = collector.collect()
@@ -105,6 +105,32 @@ def collect_platform(platform_name: str, config_path: str) -> List[Dict[str, Any
     except Exception as e:
         logger.error(f"Failed to collect from {platform_name}: {e}")
         return []
+
+
+def apply_runtime_overrides(config: Dict[str, Any], args: argparse.Namespace) -> Dict[str, Any]:
+    """Apply CLI-only overrides without mutating config.yaml on disk."""
+    github_cfg = config.setdefault('platforms', {}).setdefault('github', {})
+
+    if args.github_repos:
+        repos = [
+            repo.strip()
+            for repo in args.github_repos.split(',')
+            if repo.strip()
+        ]
+        github_cfg['search_repos'] = repos
+
+        # Explicit repo mode should mean "only these repos" unless the caller
+        # also asks for top repos in the same run.
+        if args.github_top_repos is None:
+            top_cfg = github_cfg.setdefault('top_starred_repos', {})
+            top_cfg['enabled'] = False
+
+    if args.github_top_repos is not None:
+        top_cfg = github_cfg.setdefault('top_starred_repos', {})
+        top_cfg['enabled'] = True
+        top_cfg['count'] = args.github_top_repos
+
+    return config
 
 
 def merge_records(all_records: List[List[Dict[str, Any]]]) -> pd.DataFrame:
@@ -147,7 +173,7 @@ def generate_report(df: pd.DataFrame, dedup_result: Dict[str, Any], output_dir: 
             if 'source_type' in df.columns:
                 sub = df[df['platform'] == platform]['source_type'].value_counts()
                 for stype, scnt in sub.items():
-                    report.append(f"    {'└─ ' + stype:20s}: {scnt:5d}")
+                    report.append(f"    {'- ' + stype:20s}: {scnt:5d}")
 
         report.append(f"  {'TOTAL':20s}: {len(df):5d} records")
         report.append("")
@@ -226,7 +252,7 @@ def generate_report(df: pd.DataFrame, dedup_result: Dict[str, Any], output_dir: 
 
     # Save report
     report_path = os.path.join(output_dir, "collection_report.txt")
-    with open(report_path, 'w') as f:
+    with open(report_path, 'w', encoding='utf-8') as f:
         f.write(report_text)
 
     logger.info(f"Report saved to {report_path}")
@@ -264,11 +290,30 @@ def main():
         default=None,
         help='Output filename for combined CSV'
     )
+    parser.add_argument(
+        '--github-repos',
+        default=None,
+        help=(
+            'Comma-separated GitHub owner/repo names to search for this run, '
+            'for example "microsoft/vscode" or "owner/a,owner/b". '
+            'When provided without --github-top-repos, top-repo discovery is disabled.'
+        )
+    )
+    parser.add_argument(
+        '--github-top-repos',
+        type=int,
+        default=None,
+        help=(
+            'Enable GitHub top-starred repository discovery for this run and '
+            'collect from the top N repositories. Can be combined with --github-repos.'
+        )
+    )
 
     args = parser.parse_args()
 
     # Setup
     config = load_config(args.config)
+    config = apply_runtime_overrides(config, args)
     logger = setup_logging(config['project'].get('log_dir', './logs'))
 
     logger.info("=" * 60)
@@ -297,7 +342,7 @@ def main():
             logger.info(f"Skipping {platform} (disabled in config)")
             continue
 
-        records = collect_platform(platform, args.config)
+        records = collect_platform(platform, config)
         all_records.append(records)
 
     # Merge
